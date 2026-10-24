@@ -11,6 +11,13 @@ Thumbs.db
 *.pem
 credentials.json
 
+# Android local
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+releases/*.apk
+
 # Raw WhatsApp exports — never commit personal chats
 WhatsApp*.txt
 *.zip
