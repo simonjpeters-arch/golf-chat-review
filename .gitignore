@@ -1,0 +1,22 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Secrets (if any added later)
+.env
+.env.*
+*.pem
+credentials.json
+
+# Raw WhatsApp exports — never commit personal chats
+WhatsApp*.txt
+*.zip
+__pycache__/
+*.pyc
+
+# Keep the tiny parser fixture
+!pwa/fixtures/sample-chat.txt
+!docs/fixtures/sample-chat.txt

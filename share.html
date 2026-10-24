@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Golf No-Show Analysis</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3dd68c;
+      --simon: #5b9fd4;
+      --gaythan: #e07a5f;
+      --both: #b48ead;
+      --confirmed: #3dd68c;
+      --fizzled: #f2cc60;
+      --border: #2d3a4f;
+      --radius: 10px;
+      --code-bg: #121820;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    header {
+      background: linear-gradient(135deg, #1a2332 0%, #0f2820 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1rem 0;
+    }
+    header h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+      overflow-x: auto;
+      padding-bottom: 0;
+    }
+    .tab {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+      border-radius: var(--radius) var(--radius) 0 0;
+      white-space: nowrap;
+      transition: color 0.15s, background 0.15s;
+    }
+    .tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .tab.active {
+      color: var(--accent);
+      background: var(--bg);
+      font-weight: 600;
+    }
+    main { padding: 1.25rem 1rem 2rem; max-width: 1480px; margin: 0 auto; }
+    .dashboard-lead {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 1rem;
+      max-width: 72ch;
+    }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 640px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 0.75rem;
+      text-align: center;
+    }
+    .kpi .kpi-val { font-size: 1.65rem; font-weight: 700; line-height: 1.1; }
+    .kpi .kpi-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.25; }
+    .kpi.kpi-simon .kpi-val { color: var(--simon); }
+    .kpi.kpi-gaythan .kpi-val { color: var(--gaythan); }
+    .kpi.kpi-both .kpi-val { color: var(--both); }
+    .kpi.kpi-accent .kpi-val { color: var(--accent); }
+    .kpi.kpi-warn .kpi-val { color: #f0a090; }
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .dash-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 1000px) {
+      .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; }
+    }
+    .dash-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem 1rem;
+    }
+    .dash-panel h3 {
+      margin: 0 0 0.25rem;
+      font-size: 0.95rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .dash-panel .chart-sub { margin-bottom: 0.5rem; }
+    .excuse-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .excuse-card {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0.65rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .excuse-card .exc-rank { font-weight: 700; color: var(--accent); }
+    .excuse-card .exc-count { font-weight: 700; font-size: 1.1rem; }
+    .callout-panel {
+      background: rgba(224, 122, 95, 0.08);
+      border: 1px solid rgba(224, 122, 95, 0.3);
+    }
+    .callout-panel ul { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; color: #c5d0de; }
+    .wk-strip {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.35rem;
+      scrollbar-width: thin;
+    }
+    .wk-strip-item {
+      flex: 0 0 220px;
+      padding: 0.55rem 0.65rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+    }
+    .wk-strip-item.confirmed { border-left: 3px solid var(--confirmed); }
+    .wk-strip-item.fizzled { border-left: 3px solid var(--fizzled); }
+    .dash-bottomline {
+      margin: 1rem 0;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+    .dash-bottomline h3 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--accent); }
+    .dash-bottomline ul { margin: 0; padding-left: 1.25rem; color: #c5d0de; }
+    .dash-data-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .dash-data-nav span { color: var(--muted); font-size: 0.85rem; margin-right: 0.5rem; align-self: center; }
+    .dash-link {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.85rem;
+    }
+    .dash-link:hover { border-color: var(--accent); color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .stat-card .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+    .stat-card.simon .num { color: var(--simon); }
+    .stat-card.gaythan .num { color: var(--gaythan); }
+    .stat-card.both .num { color: var(--both); }
+    .stat-card.accent .num { color: var(--accent); }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .toolbar input, .toolbar select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+    .toolbar input { flex: 1 1 200px; }
+    .count { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td {
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: var(--text); }
+    th.sorted-asc::after { content: " ▲"; color: var(--accent); }
+    th.sorted-desc::after { content: " ▼"; color: var(--accent); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    td.date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    td.quote { color: #c5d0de; max-width: 28rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-simon { background: rgba(91,159,212,0.2); color: var(--simon); }
+    .badge-gaythan { background: rgba(224,122,95,0.2); color: var(--gaythan); }
+    .badge-both { background: rgba(180,142,173,0.2); color: var(--both); }
+    .badge-confirmed { background: rgba(61,214,140,0.15); color: var(--confirmed); }
+    .badge-fizzled { background: rgba(242,204,96,0.15); color: var(--fizzled); }
+    .badge-muted { background: rgba(139,156,179,0.15); color: var(--muted); }
+    .summary-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .summary-block h2 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--accent); }
+    .summary-block ul { margin: 0; padding-left: 1.25rem; color: #c5d0de; }
+    .summary-block li { margin-bottom: 0.35rem; }
+    .empty { padding: 2rem; text-align: center; color: var(--muted); }
+    /* Methodology panel */
+    .methodology-wrap { max-width: 900px; }
+    .method-intro { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .methodology-wrap section { margin-bottom: 2rem; scroll-margin-top: 1rem; }
+    .methodology-wrap h2 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .methodology-wrap h3 { font-size: 1rem; margin: 1rem 0 0.5rem; }
+    .methodology-wrap p { color: #c5d0de; margin: 0 0 0.75rem; }
+    .methodology-wrap ul, .methodology-wrap ol {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+      color: #c5d0de;
+    }
+    .methodology-wrap li { margin-bottom: 0.35rem; }
+    .methodology-wrap table {
+      margin-bottom: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    code, .path {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.85em;
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #a8d4ff;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      color: #c5d0de;
+      font-size: 0.875rem;
+      line-height: 1.7;
+    }
+    .card.warn { border-color: rgba(242,204,96,0.4); background: rgba(242,204,96,0.06); }
+    .tag {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .tag-in { background: rgba(61,214,140,0.15); color: var(--accent); }
+    .tag-out { background: rgba(224,122,95,0.15); color: var(--gaythan); }
+    footer.page-footer {
+      text-align: center;
+      padding: 1.25rem 1rem 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+    .timeline-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .timeline-legend .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .timeline-legend .dot.simon { background: var(--simon); }
+    .timeline-legend .dot.gaythan { background: var(--gaythan); }
+    .timeline-legend .dot.both { background: var(--both); }
+    .timeline-legend .tl-note { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
+    .chart-lead { color: var(--muted); margin: 0 0 1rem; font-size: 0.9rem; }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .chart-card h3 { margin: 0 0 0.35rem; font-size: 1rem; color: var(--accent); }
+    .chart-sub { margin: 0 0 0.75rem; color: var(--muted); font-size: 0.85rem; }
+    .chart-wrap { position: relative; width: 100%; }
+    .chart-wrap canvas { width: 100%; display: block; background: #0f1419; border-radius: 8px; }
+    .chart-tip {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      max-width: 280px;
+      padding: 0.6rem 0.75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: #c5d0de;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) { .chart-grid-2 { grid-template-columns: 1fr; } }
+    .chart-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 1000px) { .chart-grid-3 { grid-template-columns: 1fr; } }
+    .pie-legend { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.6; }
+    .excuse-list { margin: 0; padding: 0; list-style: none; }
+    .excuse-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .excuse-list .rank { color: var(--accent); font-weight: 700; width: 1.5rem; }
+    .excuse-list .bar-bg { flex: 1; height: 8px; background: var(--code-bg); border-radius: 4px; overflow: hidden; }
+    .excuse-list .bar-fill { height: 100%; border-radius: 4px; }
+    .notice-callout {
+      background: rgba(224, 122, 95, 0.12);
+      border: 1px solid rgba(224, 122, 95, 0.35);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .notice-callout strong { color: #f0a090; }
+    .worst-notice { font-size: 0.85rem; color: #c5d0de; }
+    .worst-notice li { margin: 0.35rem 0; }
+    .wk-flow { display: flex; flex-direction: column; gap: 0.75rem; }
+    .wk-flow-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      background: var(--surface2);
+    }
+    .wk-flow-card.confirmed { border-left: 3px solid var(--confirmed); }
+    .wk-flow-card.fizzled { border-left: 3px solid var(--fizzled); }
+    .wk-flow-top { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .wk-flow-row { display: flex; align-items: stretch; gap: 0.5rem; flex-wrap: wrap; }
+    .wk-node { flex: 1 1 200px; min-width: 0; }
+    .wk-arrow { align-self: center; color: var(--accent); font-size: 1.25rem; font-weight: bold; }
+    .wk-label { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+    .wk-date { font-weight: 600; font-size: 0.9rem; }
+    .wk-snippet { font-size: 0.8rem; color: #c5d0de; margin-top: 0.25rem; }
+    @media (max-width: 640px) {
+      header h1 { font-size: 1.25rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      th, td { padding: 0.5rem; font-size: 0.8rem; }
+      .count { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Golf skip / no-show review</h1>
+    <p>WhatsApp chat analysis · Simon &amp; Gaythan · 2020–2026 · executive dashboard</p>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="dashboard" role="tab">Dashboard</button>
+      <button class="tab" data-tab="confirmed" role="tab">Confirmed no-shows</button>
+      <button class="tab" data-tab="weekday" role="tab">Weekday → weekend</button>
+      <button class="tab" data-tab="borderline" role="tab">Borderline</button>
+      <button class="tab" data-tab="timeline" role="tab">Over time</button>
+      <button class="tab" data-tab="audit" role="tab">Audit trail</button>
+      <button class="tab" data-tab="methodology" role="tab">Methodology</button>
+    </nav>
+  </header>
+  <main>
+    <section id="panel-dashboard" class="panel active" role="tabpanel"></section>
+    <section id="panel-confirmed" class="panel" role="tabpanel"></section>
+    <section id="panel-weekday" class="panel" role="tabpanel"></section>
+    <section id="panel-borderline" class="panel" role="tabpanel"></section>
+    <section id="panel-timeline" class="panel" role="tabpanel"></section>
+    <section id="panel-audit" class="panel" role="tabpanel"></section>
+    <section id="panel-methodology" class="panel" role="tabpanel">
+      <!-- embedded in share.html via build_html.py -->
+<div class="methodology-wrap">
+  <p class="method-intro">How this analysis was built — source data, search rules, inclusion criteria, and limitations. Everything in this file is self-contained; no other files required.</p>
+  <section id="m-source"><h2>1. Source data</h2>
+  <table><tr><th>Field</th><th>Value</th></tr>
+  <tr><td>File</td><td><code>WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+  <tr><td>Path</td><td><code class="path">C:\Users\simon\Downloads\WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+  <tr><td>Format</td><td>WhatsApp text export</td></tr>
+  <tr><td>Size</td><td>~6.6 MB</td></tr>
+  <tr><td>Date range</td><td>June 2020 – 2026</td></tr>
+  <tr><td>Participants</td><td>Simon (🥸) and Gaythan Sandridge</td></tr>
+  <tr><td>Golf mentions</td><td>~663 lines containing “golf”</td></tr></table>
+  <p>The raw chat was not included in this file. Findings come from searching and reading that export.</p></section>
+
+  <section id="m-scope"><h2>2. Scope — what counts as golf</h2>
+  <h3><span class="tag tag-in">Included</span></h3>
+  <ul><li><strong>Pitch / range</strong> — Urban Golf, Pitch Golf, bay bookings</li>
+  <li><strong>Real / 18-hole</strong> — Trent Park, MK trips, tee times</li>
+  <li><strong>Planned together</strong> — invites, bookings, weekend plans</li>
+  <li><strong>Skip outcomes</strong> — bail, cancel, no-show, solo because other bailed</li></ul>
+  <h3><span class="tag tag-out">Excluded</span></h3>
+  <table><tr><th>Exclusion</th><th>Reason</th></tr>
+  <tr><td>Skipping rope</td><td>Not golf</td></tr>
+  <tr><td>Swim golf</td><td>Swimming context</td></tr>
+  <tr><td>News links / hyperbole</td><td>Not dated skips</td></tr>
+  <tr><td>Mini-golf / virtual PGA only</td><td>Not irl joint rounds</td></tr>
+  <tr><td>Non-golf bailing</td><td>Dinner, drugs, races, etc.</td></tr></table></section>
+
+  <section id="m-search"><h2>3. Search approach</h2>
+  <p>Systematic grep over the full export, then <strong>manual context reading</strong> (±20–50 lines per hit).</p>
+  <h3>Primary patterns</h3>
+  <ul><li><code>golf</code> — all ~663 mentions</li>
+  <li>Golf + time: weekend, Saturday, Sunday, tomorrow, tonight, Friday</li>
+  <li>Golf + failure: skip, bail, cancel, pull out, not turn, no show</li></ul>
+  <h3>Apology / bail phrasing (golf context)</h3>
+  <div class="card"><code>sorry not coming</code> · <code>sorry can't make</code> · <code>not coming</code> · <code>can't make it</code> · <code>won't make it</code> · <code>pull out</code> · <code>bailing</code> · <code>not turning up</code> · <code>decided against</code> · <code>don't fancy</code> · <code>not going to be able</code> · <code>haven't gone golf</code> · <code>shall I cancel</code> · <code>go ahead and cancel</code></div>
+  <h3>Weekday → weekend pass</h3>
+  <p>Mon–Thu golf mentions referencing Fri–Sun, traced forward for outcome.</p></section>
+
+  <section id="m-inclusion"><h2>4. Inclusion criteria</h2>
+  <h3>Confirmed no-show</h3>
+  <ol><li>Planned or booked golf together</li><li>One party did not attend or both cancelled</li><li>Identifiable date</li><li>Clear attribution (Simon / Gaythan / Both)</li></ol>
+  <h3>Borderline</h3>
+  <ul><li>Ambiguous golf context</li><li>Double-booking awareness</li><li>Aggregate accusations without one dated round</li><li>Wrong activity (swim, virtual PGA, etc.)</li><li>Forgot to book</li></ul>
+  <h3>False positive</h3>
+  <p>Looked like skip but they played (reluctance then rescheduled).</p></section>
+
+  <section id="m-weekday"><h2>5. Weekday → weekend logic</h2>
+  <table><tr><th>Step</th><th>Rule</th></tr>
+  <tr><td>1</td><td>Find Mon–Thu golf referencing upcoming Fri–Sun</td></tr>
+  <tr><td>2</td><td>Record who planned and mid-week quote</td></tr>
+  <tr><td>3</td><td>Read weekend messages for outcome</td></tr>
+  <tr><td>4</td><td><strong>Confirmed</strong> — explicit skip on planned weekend</td></tr>
+  <tr><td>5</td><td><strong>Fizzled</strong> — agreed mid-week but no round / never booked</td></tr>
+  <tr><td>6</td><td><strong>Who failed</strong> — bailer, both, or Unclear</td></tr></table></section>
+
+  <section id="m-stats"><h2>6. Summary stats</h2>
+  <table><tr><th>Label</th><th>Rule</th></tr>
+  <tr><td>Simon / Gaythan</td><td>Party who declined, cancelled, or no-showed</td></tr>
+  <tr><td>Both</td><td>Mutual cancel — counted once, not double</td></tr></table>
+  <div class="card warn"><strong>42 vs 44:</strong> Narrative cites 44 confirmed; dated table has <strong>42 rows</strong> (17 Simon + 22 Gaythan + 3 Both). This viewer uses 42 as the authoritative dated list.</div></section>
+
+  <section id="m-visual"><h2>7. Over time (visual tab)</h2>
+  <p>The <strong>Over time</strong> tab charts the same 42 confirmed rows as the tables — no separate dataset. Canvas charts (offline, embedded JS): pies (who skipped + excuse categories), top-5 excuse list, notice-time buckets and scatter (WhatsApp cancel time vs inferred session start), scatter timeline, quarterly bars, cumulative lines, and weekday→weekend cards.</p></section>
+
+  <section id="m-limits"><h2>8. Limitations</h2>
+  <ul><li>Export gaps — deleted messages invisible</li><li>Ambiguous banter requires context</li><li>Date inference when play date not explicit</li><li>Solo play = skip for absent party</li><li>Manual classification, not fully automated</li><li>Private chat — share responsibly</li></ul></section>
+</div>
+    </section>
+  </main>
+  <footer class="page-footer">Self-contained report · August 2026 · all data and methodology in this file  </footer>
+  <div id="prank-modal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:.75rem">
+    <div style="background:#111;border-radius:12px;width:min(40rem,100%);max-height:94vh;overflow:auto;padding:.75rem">
+      <div id="rick-embed" style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:8px;overflow:hidden;margin-bottom:.75rem"></div>
+      <div style="background:#140808;border:4px double #c94c4c;color:#f0d0d0;padding:1rem .9rem;text-align:center">
+        <h2 style="margin:0 0 .35rem;color:#ff6b6b;letter-spacing:.08em;font-size:.85rem;text-transform:uppercase">Independent Reliability Rating</h2>
+        <p>Certified finding (banter edition)</p>
+        <p style="font-size:1.05rem;font-weight:700;color:#fff">Nathan is more unreliable than a North Korean ICBM.</p>
+        <p style="font-size:.72rem;color:#c9b">Joke / group-chat energy only — not an intelligence assessment, not a real missile rating. The Audit trail table is the actual golf evidence. Press play if the clip is paused.</p>
+        <button type="button" class="dash-link" id="prank-close">Back to the real numbers</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const DATA = {"confirmed": [{"Date": "8/6/20", "WhoSkipped": "Simon", "Planned": "Gaythan invited golf later", "Reason": "Thumb injury: \"I won't be able to hold the club\"; later \"working late tonight\"", "Outcome": "Did not play together"}, {"Date": "8/10/20", "WhoSkipped": "Simon", "Planned": "Golf suggested", "Reason": "\"Would say golf but want to give my thumb another day to recover\"", "Outcome": "Declined"}, {"Date": "9/15/20", "WhoSkipped": "Gaythan", "Planned": "Had plans to play golf", "Reason": "\"Had plans to play golf but then James said we were offered a ned spot\"", "Outcome": "Chose swimming instead"}, {"Date": "4/23/21", "WhoSkipped": "Gaythan", "Planned": "Golf (few days)", "Reason": "\"I've had to avoid golf for a few days\" (finger split)", "Outcome": "Skipped several days"}, {"Date": "5/23/21", "WhoSkipped": "Simon", "Planned": "Golf that day", "Reason": "\"not a chance i am playing golf today\" (finger)", "Outcome": "Gaythan played solo later (\"I went golfing today\")"}, {"Date": "6/2/21", "WhoSkipped": "Simon", "Planned": "Golf that day", "Reason": "Surgery on finger: \"Also no golf for me today\"", "Outcome": "Skipped"}, {"Date": "6/20/21", "WhoSkipped": "Both", "Planned": "Golf that day", "Reason": "Gaythan: \"not sure how much i fancy golf today\"; Simon: \"I am not feeling it\"; \"maybe let golf know we arent coming\"", "Outcome": "Cancelled; £150 cancellation fee mentioned"}, {"Date": "6/30/21", "WhoSkipped": "Both", "Planned": "Pitch booked 11am", "Reason": "Gaythan: \"I can't make it\"; Simon: \"Neither can I\"; \"Can't cancel either as it's within 24 hours\"", "Outcome": "Neither attended"}, {"Date": "8/24/21", "WhoSkipped": "Simon", "Planned": "Golf (same-day plan)", "Reason": "\"I don't think my thumb can do golf\"", "Outcome": "Did something else instead"}, {"Date": "9/23/21", "WhoSkipped": "Simon", "Planned": "Booked golf that day", "Reason": "\"i am not going to be able to make it\" — work deadline", "Outcome": "Gaythan went solo: \"I can't cancel now so will head down\""}, {"Date": "10/7/21", "WhoSkipped": "Gaythan", "Planned": "Pitch session (9pm, bay 1)", "Reason": "\"I'm not going to get back from the office in time, you should go\"", "Outcome": "Simon went solo"}, {"Date": "10/19/21", "WhoSkipped": "Gaythan", "Planned": "Golf", "Reason": "\"I can't make golf\" — Reading office + dinner", "Outcome": "Skipped"}, {"Date": "10/22/21", "WhoSkipped": "Simon", "Planned": "Golf that evening", "Reason": "Back injury: \"Not sure I will be hitting a golf ball later\"", "Outcome": "Gaythan played: \"How ws golf\" / \"Was ok\""}, {"Date": "12/8/21", "WhoSkipped": "Gaythan", "Planned": "Golf that day", "Reason": "\"don't fancy golf… just want to chill\"", "Outcome": "Cancelled booking"}, {"Date": "1/28/22", "WhoSkipped": "Gaythan", "Planned": "Pitch session", "Reason": "Locked out: \"You go golf\"; Simon: \"Presume you are not going to make it\"", "Outcome": "Simon went solo"}, {"Date": "2/7/22", "WhoSkipped": "Gaythan", "Planned": "(Likely joint plan)", "Reason": "\"No I forgot I was playing golf with some old varonis people\"", "Outcome": "Missed your plan"}, {"Date": "4/23/22", "WhoSkipped": "Simon", "Planned": "Real golf that day", "Reason": "\"I Probably won't be free today for real golfs\"", "Outcome": "Gaythan did pitch/swim instead"}, {"Date": "4/24/22", "WhoSkipped": "Gaythan", "Planned": "Pitch that day", "Reason": "\"I didn't go in the end was playing a lot of playstation\"", "Outcome": "Skipped"}, {"Date": "5/17/22", "WhoSkipped": "Gaythan", "Planned": "Pitch (card given to Simon)", "Reason": "\"I forgot I've got a gig tonight\"; Simon: \"Dw cancel it\"", "Outcome": "Gaythan skipped; Simon could use card"}, {"Date": "5/25/22", "WhoSkipped": "Simon", "Planned": "Golf/bowling that day", "Reason": "\"As much as I would like to golf\" but seeing Eve later", "Outcome": "Skipped"}, {"Date": "6/14/22", "WhoSkipped": "Gaythan", "Planned": "Golf that evening", "Reason": "\"I'm really not in the mood for golf later… shall I cancel\"", "Outcome": "Cancelled (Simon agreed)"}, {"Date": "7/12/22", "WhoSkipped": "Simon", "Planned": "Pitch golf that night", "Reason": "Boss/work: \"Go ahead and cancel\"", "Outcome": "Cancelled (Simon noted he could have made it after work)"}, {"Date": "7/14/22", "WhoSkipped": "Simon", "Planned": "Golf that night", "Reason": "Gaythan: \"You can't golf tonight right\"; Simon: \"Nope… Going to see Dan\"", "Outcome": "Skipped"}, {"Date": "9/3/22", "WhoSkipped": "Simon", "Planned": "Real golf (morning tee)", "Reason": "Stayed at a girl's: \"sorry been an arse… ended up at a girls last night\"", "Outcome": "Gaythan played solo (9 holes)"}, {"Date": "9/26/22", "WhoSkipped": "Gaythan", "Planned": "Saturday Trent golf", "Reason": "\"I can't do Saturday golf Trent but let's move to Sunday\"", "Outcome": "Rescheduled"}, {"Date": "10/3/22", "WhoSkipped": "Gaythan", "Planned": "Golf that weekend", "Reason": "\"I'm away this weekend… can't do golf this weekend\"; Simon: \"Go ahead and cancel\"", "Outcome": "Cancelled; moved to Thu/Fri"}, {"Date": "10/29/22", "WhoSkipped": "Both", "Planned": "Golf that Saturday", "Reason": "Gaythan: \"Not so sure I fancy golf\"; Simon went back to bed", "Outcome": "Both skipped"}, {"Date": "1/26/23", "WhoSkipped": "Gaythan", "Planned": "Golf that evening", "Reason": "\"Not going to be able to I'm afraid sorry bro\"", "Outcome": "Skipped; Simon booked solo slot"}, {"Date": "3/4/23", "WhoSkipped": "Simon", "Planned": "Golf next morning", "Reason": "After night out: \"Mate, I am being lame\"; Gaythan had said \"Don't miss golf tomorrow\"", "Outcome": "Skipped"}, {"Date": "4/3/23", "WhoSkipped": "Gaythan", "Planned": "Golf that evening", "Reason": "\"I'm bailing on golf later, you go by all means\"", "Outcome": "Simon could go solo"}, {"Date": "4/28/23", "WhoSkipped": "Gaythan", "Planned": "Golf that day", "Reason": "\"Can we not golf? 😂\" — legs dead", "Outcome": "Moved to next day"}, {"Date": "5/2/23", "WhoSkipped": "Gaythan", "Planned": "Pitch golf that evening", "Reason": "\"you might be on your own… don't fancy it\"", "Outcome": "Simon played solo: \"Was a successful session\""}, {"Date": "9/22/23", "WhoSkipped": "Gaythan", "Planned": "Golf that evening", "Reason": "\"Interest in playing golf now= 0\"; \"Don't really fancy it\"", "Outcome": "Simon went and played solo"}, {"Date": "10/9/23", "WhoSkipped": "Gaythan", "Planned": "Golf next day", "Reason": "\"I can't golf tomorrow, Zoe is organising birthday dinner for mum\"", "Outcome": "Moved to Wednesday"}, {"Date": "10/11/23", "WhoSkipped": "Gaythan", "Planned": "Golf that evening", "Reason": "\"back is still sore… not going to risk it\"", "Outcome": "Skipped; tried to find replacement"}, {"Date": "10/14/23", "WhoSkipped": "Gaythan", "Planned": "Golf that morning", "Reason": "\"Haven't gone golf, didn't see the point\"", "Outcome": "Skipped"}, {"Date": "11/5/23", "WhoSkipped": "Gaythan", "Planned": "Real golf that Sunday", "Reason": "\"Decided against it, don't really fancy. Lugging a golf bag around for 4 hours.\"", "Outcome": "Skipped"}, {"Date": "11/22/23", "WhoSkipped": "Simon", "Planned": "Pitch membership session", "Reason": "\"I cant do tonight, have an early thanksgiving with some GS people\"", "Outcome": "Skipped that night"}, {"Date": "3/11/24", "WhoSkipped": "Simon", "Planned": "Friday golf booking", "Reason": "Work/Thai cooking; \"not going to leave early enough for golf\" — part of ongoing no-show pattern", "Outcome": "Friday ruled out"}, {"Date": "4/7/24", "WhoSkipped": "Gaythan", "Planned": "Golf before trip (~3–4pm)", "Reason": "Cycle/packing priority: \"not sure I'll be that keen, sorry mate\"; Simon: \"So you are bailing?\"", "Outcome": "Skipped; Simon didn't play"}, {"Date": "3/28/25", "WhoSkipped": "Simon", "Planned": "MK golf weekend (tee + BBQ)", "Reason": "\"I am bailing… just you\" / \"no need a good nights sleep\"", "Outcome": "Simon didn't go"}, {"Date": "6/7/25", "WhoSkipped": "Simon", "Planned": "Golf that morning", "Reason": "\"I am not going to golf, even though I am up\" — heartburn", "Outcome": "Skipped"}], "weekday": [{"WeekdayDate": "6/17/21 (Thu)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "6/20/21 Sun", "MidWeekQuote": "\"should we do golf on sunday?\" — Gaythan: \"We should\"", "WeekendOutcome": "Sun: Gaythan \"not sure how much i fancy golf today\"; Simon \"I am not feeling it\"; \"maybe let golf know we arent coming\" — £150 cancellation fee", "WhoFailed": "Both", "Type": "confirmed"}, {"WeekdayDate": "8/31/22 (Wed)", "WhoMentionedPlanned": "Both", "WeekendDatePlanned": "9/3/22 Sat", "MidWeekQuote": "\"Should we play golf somewhere different outside London on Saturday\" — agreed, looked at weather", "WeekendOutcome": "Sat AM: Simon \"sorry been an arse… ended up at a girls last night\"; Gaythan played solo (9 holes)", "WhoFailed": "Simon", "Type": "confirmed"}, {"WeekdayDate": "9/26/22 (Mon)", "WhoMentionedPlanned": "Gaythan", "WeekendDatePlanned": "10/1/22 Sat → 10/2/22 Sun", "MidWeekQuote": "\"I can't do Saturday golf Trent but let's move to Sunday\"; Wed 9/28 agreed Sun afternoon Trent", "WeekendOutcome": "Rescheduled again to following Sat; 10/3/22 Mon: Gaythan \"I'm away this weekend… can't do golf this weekend\" — never played", "WhoFailed": "Gaythan", "Type": "confirmed"}, {"WeekdayDate": "10/3/22 (Mon)", "WhoMentionedPlanned": "Gaythan", "WeekendDatePlanned": "10/7–9/22 weekend", "MidWeekQuote": "\"I'm away this weekend I forgot so I can't do golf this weekend\"; Simon: \"Go ahead and cancel\"", "WeekendOutcome": "Camping with James; golf cancelled", "WhoFailed": "Gaythan", "Type": "confirmed"}, {"WeekdayDate": "10/27/22 (Thu)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "10/29/22 Sat", "MidWeekQuote": "\"You fancy some real world golf this weekend\" — weather good; Gaythan: \"I could possibly do Saturday\"; Fri agreed Trent", "WeekendOutcome": "Sat: Gaythan \"Not so sure I fancy golf\"; Simon \"Once I saw your message on sat I just went back to bed\"", "WhoFailed": "Both", "Type": "confirmed"}, {"WeekdayDate": "11/1/23 (Wed)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "11/5/23 Sun", "MidWeekQuote": "\"Sunday is looking dry if you want to play real golf\"; evening: \"Are we sure play golf on sunday\" — Simon: \"I would say yeees\"", "WeekendOutcome": "Sun AM: Gaythan \"Decided against it, don't really fancy. Lugging a golf bag around for 4 hours.\"", "WhoFailed": "Gaythan", "Type": "confirmed"}, {"WeekdayDate": "4/4/24 (Thu)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "4/6–7/24 Sat–Sun", "MidWeekQuote": "\"Could play golf after cycling this weekend\"; Gaythan: \"Yeah possibly, Sunday I think is better\"", "WeekendOutcome": "Sat 4/6: both agreed tomorrow; Sun 4/7: Gaythan cycle/packing — \"not sure I'll be that keen, sorry mate\"; Simon: \"So you are bailing?\"", "WhoFailed": "Gaythan", "Type": "confirmed"}, {"WeekdayDate": "3/1/22 (Tue) → 3/3/22 (Thu)", "WhoMentionedPlanned": "Simon → Gaythan", "WeekendDatePlanned": "3/6/22 Sun", "MidWeekQuote": "Tue: \"Are we Golfing this week/weekend\"; Thu: \"Are we golfing this weekend\" — agreed Sunday Trent", "WeekendOutcome": "No chat evidence of Sunday round; played pitch Fri lunch instead; by 3/13 still planning golf for later in week", "WhoFailed": "Unclear (plan fizzled)", "Type": "fizzled"}, {"WeekdayDate": "9/1/21 (Wed)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "9/5/21 Sun", "MidWeekQuote": "\"Proper golf on Sunday ?\"", "WeekendOutcome": "Gaythan same day: wiped out by COVID jab (\"feel like I've got covid\"); no follow-up booking or round", "WhoFailed": "Gaythan (illness)", "Type": "fizzled"}, {"WeekdayDate": "6/30/22 (Thu)", "WhoMentionedPlanned": "Gaythan", "WeekendDatePlanned": "7/3/22 Sun", "MidWeekQuote": "\"Can we do golf Sunday\" — agreed 10/11am", "WeekendOutcome": "Sun AM Gaythan from a girl's: \"won't be joining you\"; no golf messages that day — plan appears to have lapsed", "WhoFailed": "Gaythan (likely)", "Type": "fizzled"}, {"WeekdayDate": "8/21/23 (Mon)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "8/26–28/23 BH weekend", "MidWeekQuote": "\"do you have time for golf irl this weekend?\"", "WeekendOutcome": "Gaythan: \"I'm going to go with no for now but that might change\" — no golf chat all bank-holiday weekend", "WhoFailed": "Gaythan", "Type": "fizzled"}, {"WeekdayDate": "9/26/23 (Tue)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "9/30–10/1/23 weekend", "MidWeekQuote": "\"We should golf irl this weekend\" — \"No ifs no butts\"; Gaythan: \"Agreed ok\"", "WeekendOutcome": "Fri 9/29: Gaythan \"We should have played golf today\" but work/busy; no joint weekend round materialised", "WhoFailed": "Both (enthusiasm, no execution)", "Type": "fizzled"}, {"WeekdayDate": "10/4/23 (Wed)", "WhoMentionedPlanned": "Both", "WeekendDatePlanned": "10/8/23 Sun", "MidWeekQuote": "Gaythan thinking about golf; Simon: \"Not going to make it back in time this weekend\" (Ryanair trip)", "WeekendOutcome": "Simon still abroad; no Sunday golf", "WhoFailed": "Simon (travel)", "Type": "fizzled"}, {"WeekdayDate": "2/27/23 (Mon)", "WhoMentionedPlanned": "Simon", "WeekendDatePlanned": "3/4–5/23 weekend", "MidWeekQuote": "\"Golf maybe this weekend?\" — Gaythan: \"Could be done\"", "WeekendOutcome": "No golf messages that weekend; plan never booked", "WhoFailed": "Unclear", "Type": "fizzled"}], "borderline": [{"Date": "5/23/21", "Who": "Gaythan", "Notes": "\"i forgot ive got golf planned saturday with James\" — double-booking awareness, not same-day skip with you"}, {"Date": "10/17/21", "Who": "", "Notes": "\"Lucky we didn't get golf for tomorrow\" — no booking made"}, {"Date": "4/8/22", "Who": "Gaythan", "Notes": "\"Not coming boo\" during cycle ride — not clearly golf"}, {"Date": "4/12/22", "Who": "", "Notes": "Discussed being late for Trent Park — they still went"}, {"Date": "10/21/22", "Who": "Gaythan", "Notes": "\"I forgot to book golf\" — forgot to organise, not a skip"}, {"Date": "4/27/23", "Who": "Gaythan", "Notes": "\"And likely not turn up\" — banter about you organising"}, {"Date": "5/13/22", "Who": "Gaythan", "Notes": "\"bit late for golf\" on Sunday — logistics only, suggested pitch instead"}, {"Date": "6/22/22", "Who": "Gaythan", "Notes": "\"let me confirm with golf tomorrow\" — unclear if Friday happened"}, {"Date": "7/21/23", "Who": "Gaythan", "Notes": "Early reluctance, but session happened"}, {"Date": "9/6/23", "Who": "Simon", "Notes": "\"You already have one for not turning up this morning\" — appears to be swim booking dispute, not golf"}, {"Date": "11/13/23", "Who": "Gaythan", "Notes": "Wants to \"start golfing or cancel\" membership — general frustration, not one session"}, {"Date": "12/2/23", "Who": "Gaythan", "Notes": "\"Can't believe you haven't turned up\" — drug delivery, not golf"}, {"Date": "3/29/23", "Who": "Both", "Notes": "Low interest in pitch membership generally — not one missed round"}, {"Date": "5/8/25", "Who": "Debate", "Notes": "Who bailed most recently — Gaythan says you twice since; you say he last bailed and you went with James/Haz"}, {"Date": "9/11/25", "Who": "Simon", "Notes": "\"You bailed\" — Harold's stuff / dinner, not golf"}, {"Date": "10/17/25", "Who": "Simon", "Notes": "\"You don't fancy one round of pga\" — virtual PGA, not real golf"}, {"Date": "11/28/25", "Who": "Simon", "Notes": "\"Training for a race you bailed on\" — running race, not golf"}, {"Date": "63383+", "Who": "Simon (pattern)", "Notes": "\"54th booking\" / repeated no-shows — aggregate accusation, not one dated round"}], "analytics": {"excuse_categories": [{"category": "Injury / physical", "count": 10}, {"category": "Other plans / work / social", "count": 10}, {"category": "Don't fancy / mood", "count": 10}, {"category": "Social / dating / night out", "count": 5}, {"category": "Other / unclear", "count": 3}, {"category": "Travel / schedule", "count": 3}, {"category": "Forgot / logistics", "count": 1}], "top_excuses": [{"rank": 1, "category": "Injury / physical", "count": 10}, {"rank": 2, "category": "Other plans / work / social", "count": 10}, {"rank": 3, "category": "Don't fancy / mood", "count": 10}, {"rank": 4, "category": "Social / dating / night out", "count": 5}, {"rank": 5, "category": "Other / unclear", "count": 3}], "notice": [{"date": "8/6/20", "who": "Simon", "category": "Injury / physical", "session_iso": "2020-08-06T18:00:00", "cancel_iso": "2020-08-06T17:19:00", "notice_hours": 0.68, "bucket": "<2 hours", "note": "Same-day invite; thumb + working late messages evening"}, {"date": "8/10/20", "who": "Simon", "category": "Injury / physical", "session_iso": "2020-08-10T12:00:00", "cancel_iso": "2020-08-10T11:02:00", "notice_hours": 0.97, "bucket": "<2 hours", "note": "Declined when golf suggested"}, {"date": "9/15/20", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2020-09-15T12:00:00", "cancel_iso": "2020-09-15T10:41:00", "notice_hours": 1.32, "bucket": "<2 hours", "note": "Chose swimming over planned golf"}, {"date": "4/23/21", "who": "Gaythan", "category": "Injury / physical", "session_iso": "2021-04-23T18:00:00", "cancel_iso": "2021-04-23T09:12:00", "notice_hours": 8.8, "bucket": "Same day (6h+)", "note": "Finger injury — avoided golf few days; first clear bail that day"}, {"date": "5/23/21", "who": "Simon", "category": "Injury / physical", "session_iso": "2021-05-23T12:00:00", "cancel_iso": "2021-05-23T08:34:00", "notice_hours": 3.43, "bucket": "Same day (2-6h)", "note": "not a chance i am playing golf today"}, {"date": "6/2/21", "who": "Simon", "category": "Injury / physical", "session_iso": "2021-06-02T12:00:00", "cancel_iso": "2021-06-02T15:51:00", "notice_hours": -3.85, "bucket": "After start / none", "note": "I won't need crutches"}, {"date": "6/20/21", "who": "Both", "category": "Other / unclear", "session_iso": "2021-06-20T12:00:00", "cancel_iso": "2021-06-16T18:24:00", "notice_hours": 89.6, "bucket": "3+ days", "note": "No"}, {"date": "6/30/21", "who": "Both", "category": "Other / unclear", "session_iso": "2021-06-30T11:00:00", "cancel_iso": "2021-06-30T10:17:00", "notice_hours": 0.72, "bucket": "<2 hours", "note": "I can't make it"}, {"date": "8/24/21", "who": "Simon", "category": "Injury / physical", "session_iso": "2021-08-24T12:00:00", "cancel_iso": "2021-08-24T10:52:00", "notice_hours": 1.13, "bucket": "<2 hours", "note": "I don't think my thumb can do golf, struggle with buttons atm"}, {"date": "9/23/21", "who": "Simon", "category": "Other plans / work / social", "session_iso": "2021-09-23T12:00:00", "cancel_iso": "2021-09-21T15:01:00", "notice_hours": 44.98, "bucket": "Previous day", "note": "Nah don't fancy myself as Indiana bones"}, {"date": "10/7/21", "who": "Gaythan", "category": "Injury / physical", "session_iso": "2021-10-07T21:00:00", "cancel_iso": "2021-10-07T18:28:00", "notice_hours": 2.53, "bucket": "Same day (2-6h)", "note": "I'm not going to get back from the office in time, you should go"}, {"date": "10/19/21", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2021-10-19T12:00:00", "cancel_iso": "2021-10-17T18:50:00", "notice_hours": 41.17, "bucket": "Previous day", "note": "Movie star from Bangladesh, won't tell me her name"}, {"date": "10/22/21", "who": "Simon", "category": "Injury / physical", "session_iso": "2021-10-22T19:00:00", "cancel_iso": "2021-10-22T15:19:00", "notice_hours": 3.68, "bucket": "Same day (2-6h)", "note": "Not sure I will be hitting a golf ball later"}, {"date": "12/8/21", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2021-12-08T12:00:00", "cancel_iso": "2021-12-08T17:24:00", "notice_hours": -5.4, "bucket": "After start / none", "note": "Yo man sorry to be crap but don't fancy golf, met a girl last night, been painting all day, just wan"}, {"date": "1/28/22", "who": "Gaythan", "category": "Forgot / logistics", "session_iso": "2022-01-28T12:00:00", "cancel_iso": "2022-01-27T12:35:00", "notice_hours": 23.42, "bucket": "Same day (6h+)", "note": "Oi"}, {"date": "2/7/22", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2022-02-07T12:00:00", "cancel_iso": "2022-02-07T10:23:00", "notice_hours": 1.62, "bucket": "<2 hours", "note": "No I forgot I was playing golf with some old varonis people"}, {"date": "4/23/22", "who": "Simon", "category": "Other / unclear", "session_iso": "2022-04-23T12:00:00", "cancel_iso": "2022-04-23T10:25:00", "notice_hours": 1.58, "bucket": "<2 hours", "note": "I Probably won't be free today for real golfs"}, {"date": "4/24/22", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2022-04-24T12:00:00", "cancel_iso": "2022-04-24T06:25:00", "notice_hours": 5.58, "bucket": "Same day (2-6h)", "note": "I didn't go in the end was playing a lot of playstation. Heading to Cambridge to see the fam so won'"}, {"date": "5/17/22", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2022-05-17T12:00:00", "cancel_iso": "2022-05-17T08:45:00", "notice_hours": 3.25, "bucket": "Same day (2-6h)", "note": "I forgot I've got a gig tonight, I'll come find you at some point and give you the pitch card"}, {"date": "5/25/22", "who": "Simon", "category": "Social / dating / night out", "session_iso": "2022-05-25T12:00:00", "cancel_iso": "2022-05-25T10:09:00", "notice_hours": 1.85, "bucket": "<2 hours", "note": "As much as I would like to golf"}, {"date": "6/14/22", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2022-06-14T19:00:00", "cancel_iso": "2022-06-14T13:49:00", "notice_hours": 5.18, "bucket": "Same day (2-6h)", "note": "I'm really not in the mood for golf later, you still want to go or shall I cancel"}, {"date": "7/12/22", "who": "Simon", "category": "Other plans / work / social", "session_iso": "2022-07-12T19:00:00", "cancel_iso": "2022-07-12T17:20:00", "notice_hours": 1.67, "bucket": "<2 hours", "note": "Go ahead and cancel"}, {"date": "7/14/22", "who": "Simon", "category": "Social / dating / night out", "session_iso": "2022-07-14T19:00:00", "cancel_iso": "2022-07-12T11:04:00", "notice_hours": 55.93, "bucket": "2-3 days", "note": "No"}, {"date": "9/3/22", "who": "Simon", "category": "Social / dating / night out", "session_iso": "2022-09-03T09:00:00", "cancel_iso": "2022-09-03T09:59:00", "notice_hours": -0.98, "bucket": "After start / none", "note": "sorry been an arse"}, {"date": "9/26/22", "who": "Gaythan", "category": "Travel / schedule", "session_iso": "2022-09-24T09:00:00", "cancel_iso": "2022-09-22T18:05:00", "notice_hours": 38.92, "bucket": "Previous day", "note": "Saturday Trent — moved to Sunday (~2 days notice)"}, {"date": "10/3/22", "who": "Gaythan", "category": "Travel / schedule", "session_iso": "2022-10-01T10:00:00", "cancel_iso": "2022-09-29T12:18:00", "notice_hours": 45.7, "bucket": "Previous day", "note": "Away this weekend — ~2 days before Sat"}, {"date": "10/29/22", "who": "Both", "category": "Don't fancy / mood", "session_iso": "2022-10-29T10:00:00", "cancel_iso": "2022-10-29T10:58:00", "notice_hours": -0.97, "bucket": "After start / none", "note": "Not so sure I fancy golf"}, {"date": "1/26/23", "who": "Gaythan", "category": "Social / dating / night out", "session_iso": "2023-01-26T19:00:00", "cancel_iso": "2023-01-26T16:48:00", "notice_hours": 2.2, "bucket": "Same day (2-6h)", "note": "Not going to be able to I'm afraid sorry bro"}, {"date": "3/4/23", "who": "Simon", "category": "Don't fancy / mood", "session_iso": "2023-03-05T09:00:00", "cancel_iso": "2023-03-04T23:47:00", "notice_hours": 9.22, "bucket": "Same day (6h+)", "note": "Skip logged 3/4; session was next morning"}, {"date": "4/3/23", "who": "Gaythan", "category": "Social / dating / night out", "session_iso": "2023-04-03T19:00:00", "cancel_iso": "2023-04-03T15:52:00", "notice_hours": 3.13, "bucket": "Same day (2-6h)", "note": "I'm bailing on golf later, you go by all means"}, {"date": "4/28/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-04-28T12:00:00", "cancel_iso": "2023-04-28T12:24:00", "notice_hours": -0.4, "bucket": "After start / none", "note": "Can we not golf? 😂"}, {"date": "5/2/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-05-02T19:00:00", "cancel_iso": "2023-05-02T13:11:00", "notice_hours": 5.82, "bucket": "Same day (2-6h)", "note": "Yeah you might be on your own, wasn't late just don't fancy it"}, {"date": "9/22/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-09-22T19:00:00", "cancel_iso": "2023-09-22T16:15:00", "notice_hours": 2.75, "bucket": "Same day (2-6h)", "note": "Interest in playing golf now= 0"}, {"date": "10/9/23", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2023-10-10T18:00:00", "cancel_iso": "2023-10-09T14:22:00", "notice_hours": 27.63, "bucket": "Previous day", "note": "Can't golf tomorrow — dinner conflict"}, {"date": "10/11/23", "who": "Gaythan", "category": "Injury / physical", "session_iso": "2023-10-11T19:00:00", "cancel_iso": "2023-10-09T11:48:00", "notice_hours": 55.2, "bucket": "2-3 days", "note": "I can't golf tomorrow,  Zoe is organising birthday dinner for mum"}, {"date": "10/14/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-10-14T09:00:00", "cancel_iso": "2023-10-14T10:52:00", "notice_hours": -1.87, "bucket": "After start / none", "note": "Morning golf; message after start time (no real notice)"}, {"date": "11/5/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-11-05T10:00:00", "cancel_iso": "2023-11-05T09:07:00", "notice_hours": 0.88, "bucket": "<2 hours", "note": "Probably not to be honest, I was up at 6. Decided against it, don't really fancy. Lugging a golf bag"}, {"date": "11/22/23", "who": "Simon", "category": "Other plans / work / social", "session_iso": "2023-11-22T12:00:00", "cancel_iso": "2023-11-22T11:46:00", "notice_hours": 0.23, "bucket": "<2 hours", "note": "I cant do tonight, have an early thanksgiving with some GS people. Do you want to do golf tomorrow? "}, {"date": "3/11/24", "who": "Simon", "category": "Other plans / work / social", "session_iso": "2024-03-11T17:00:00", "cancel_iso": "2024-03-11T17:45:00", "notice_hours": -0.75, "bucket": "After start / none", "note": "But if work day, not going to leave early enough for golf"}, {"date": "4/7/24", "who": "Gaythan", "category": "Other plans / work / social", "session_iso": "2024-04-07T15:30:00", "cancel_iso": "2024-04-02T21:29:00", "notice_hours": 114.02, "bucket": "3+ days", "note": ""}, {"date": "3/28/25", "who": "Simon", "category": "Travel / schedule", "session_iso": "2025-03-29T08:00:00", "cancel_iso": "2025-03-28T20:31:00", "notice_hours": 11.48, "bucket": "Same day (6h+)", "note": "MK weekend tee; bail night before"}, {"date": "6/7/25", "who": "Simon", "category": "Injury / physical", "session_iso": "2025-06-07T09:00:00", "cancel_iso": "2025-06-07T09:03:00", "notice_hours": -0.05, "bucket": "After start / none", "note": "I am not going to golf, even though I am up"}], "notice_buckets": {"<2 hours": 11, "Same day (6h+)": 4, "Same day (2-6h)": 10, "After start / none": 8, "3+ days": 2, "Previous day": 5, "2-3 days": 2}, "notice_summary": {"median_hours": 2.6, "mean_hours": 14.3, "under_2h": 11, "same_day": 25, "after_start": 8, "known_count": 42, "simon_median": 1.6, "gaythan_median": 4.2}, "worst_notice": [{"date": "12/8/21", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2021-12-08T12:00:00", "cancel_iso": "2021-12-08T17:24:00", "notice_hours": -5.4, "bucket": "After start / none", "note": "Yo man sorry to be crap but don't fancy golf, met a girl last night, been painting all day, just wan"}, {"date": "6/2/21", "who": "Simon", "category": "Injury / physical", "session_iso": "2021-06-02T12:00:00", "cancel_iso": "2021-06-02T15:51:00", "notice_hours": -3.85, "bucket": "After start / none", "note": "I won't need crutches"}, {"date": "10/14/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-10-14T09:00:00", "cancel_iso": "2023-10-14T10:52:00", "notice_hours": -1.87, "bucket": "After start / none", "note": "Morning golf; message after start time (no real notice)"}, {"date": "9/3/22", "who": "Simon", "category": "Social / dating / night out", "session_iso": "2022-09-03T09:00:00", "cancel_iso": "2022-09-03T09:59:00", "notice_hours": -0.98, "bucket": "After start / none", "note": "sorry been an arse"}, {"date": "10/29/22", "who": "Both", "category": "Don't fancy / mood", "session_iso": "2022-10-29T10:00:00", "cancel_iso": "2022-10-29T10:58:00", "notice_hours": -0.97, "bucket": "After start / none", "note": "Not so sure I fancy golf"}, {"date": "3/11/24", "who": "Simon", "category": "Other plans / work / social", "session_iso": "2024-03-11T17:00:00", "cancel_iso": "2024-03-11T17:45:00", "notice_hours": -0.75, "bucket": "After start / none", "note": "But if work day, not going to leave early enough for golf"}, {"date": "4/28/23", "who": "Gaythan", "category": "Don't fancy / mood", "session_iso": "2023-04-28T12:00:00", "cancel_iso": "2023-04-28T12:24:00", "notice_hours": -0.4, "bucket": "After start / none", "note": "Can we not golf? 😂"}, {"date": "6/7/25", "who": "Simon", "category": "Injury / physical", "session_iso": "2025-06-07T09:00:00", "cancel_iso": "2025-06-07T09:03:00", "notice_hours": -0.05, "bucket": "After start / none", "note": "I am not going to golf, even though I am up"}]}, "stats": {"confirmed_total": 42, "simon": 17, "gaythan": 22, "both": 3, "borderline": 18, "weekday_confirmed": 7, "weekday_fizzled": 7}};
+
+    function esc(s) {
+      if (s == null) return "";
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function whoBadge(who) {
+      if (!who) return '<span class="badge badge-muted">—</span>';
+      const w = who.toLowerCase();
+      let cls = "badge-muted";
+      if (w.includes("simon") && !w.includes("gaythan") && !w.includes("both")) cls = "badge-simon";
+      else if (w.includes("gaythan") && !w.includes("simon") && !w.includes("both")) cls = "badge-gaythan";
+      else if (w.includes("both") || (w.includes("simon") && w.includes("gaythan"))) cls = "badge-both";
+      else if (w.includes("simon")) cls = "badge-simon";
+      else if (w.includes("gaythan")) cls = "badge-gaythan";
+      return `<span class="badge ${cls}">${esc(who)}</span>`;
+    }
+
+    function typeBadge(t) {
+      const cls = t === "confirmed" ? "badge-confirmed" : "badge-fizzled";
+      return `<span class="badge ${cls}">${esc(t)}</span>`;
+    }
+
+    function switchToTab(tabId) {
+      document.querySelectorAll(".tab").forEach(b => {
+        b.classList.toggle("active", b.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      const panel = document.getElementById("panel-" + tabId);
+      if (panel) panel.classList.add("active");
+      if (tabId === "timeline" && typeof renderTimelinePanel === "function") {
+        renderTimelinePanel();
+        setTimeout(() => { if (typeof initTimelineCharts === "function") initTimelineCharts(); }, 30);
+      }
+      if (tabId === "dashboard" && typeof initDashboardCharts === "function") {
+        setTimeout(() => initDashboardCharts(), 30);
+      }
+      if (tabId === "audit") renderShareAudit();
+    }
+
+    function renderShareAudit() {
+      const panel = document.getElementById("panel-audit");
+      if (!panel || panel.dataset.built) return;
+      const s = DATA.stats;
+      const notice = (DATA.analytics && DATA.analytics.notice) || [];
+      const byDate = {};
+      notice.forEach(n => { byDate[n.date] = n; });
+      const rows = DATA.confirmed.map(r => {
+        const n = byDate[r.Date] || {};
+        return {
+          Date: r.Date,
+          WhoSkipped: r.WhoSkipped,
+          Planned: r.Planned,
+          Reason: r.Reason,
+          Outcome: r.Outcome,
+          cancel_iso: n.cancel_iso || "",
+          session_iso: n.session_iso || "",
+          notice_hours: n.notice_hours == null ? "" : String(n.notice_hours) + "h",
+          category: n.category || "",
+        };
+      });
+      panel.innerHTML = `
+        <p class="dashboard-lead">Evidence ledger — same ${s.confirmed_total} confirmed rows as the tables (Simon ${s.simon}, Gaythan ${s.gaythan}, Both ${s.both}). Search phrases: golf; weekend/Saturday/Sunday; skip/bail/cancel; don't fancy; shall I cancel.</p>
+        <div id="audit-table"></div>
+        <p class="chart-sub">The table above is the real audit. Verify buttons are the comedy path.</p>
+        <div class="btn-row" style="display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0">
+          <button type="button" class="dash-link" data-prank="1">Verify against original messages</button>
+          <button type="button" class="dash-link" data-prank="1">Open source evidence</button>
+          <button type="button" class="dash-link" data-prank="1">Cryptographic hash of chat</button>
+        </div>`;
+      makeTable("audit-table", [
+        { key: "Date", label: "Date", cls: "date" },
+        { key: "WhoSkipped", label: "Who skipped", badge: "who" },
+        { key: "Planned", label: "Planned session" },
+        { key: "Reason", label: "Skip quote", cls: "quote" },
+        { key: "cancel_iso", label: "Cancel timestamp" },
+        { key: "session_iso", label: "Inferred session" },
+        { key: "notice_hours", label: "Notice" },
+        { key: "category", label: "Excuse tag" },
+        { key: "Outcome", label: "Outcome", cls: "quote" },
+      ], rows, { whoKey: "WhoSkipped", whoFilter: true });
+      panel.dataset.built = "1";
+      function closeSharePrank() {
+        const m = document.getElementById("prank-modal");
+        const wrap = document.getElementById("rick-embed");
+        if (m) m.style.display = "none";
+        if (wrap) wrap.innerHTML = "";
+      }
+      panel.querySelectorAll("[data-prank]").forEach(btn => {
+        btn.onclick = () => {
+          const m = document.getElementById("prank-modal");
+          const wrap = document.getElementById("rick-embed");
+          if (wrap) wrap.innerHTML = '<iframe title="Never Gonna Give You Up" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+          if (m) m.style.display = "flex";
+        };
+      });
+      const prankCloseBtn = document.getElementById("prank-close");
+      if (prankCloseBtn) prankCloseBtn.onclick = closeSharePrank;
+    }
+
+    function makeTable(containerId, columns, rows, options = {}) {
+      const container = document.getElementById(containerId);
+      const uid = containerId.replace("panel-", "");
+      let sortCol = options.defaultSort || 0;
+      let sortDir = 1;
+      let filterWho = "";
+      let filterType = "";
+      let search = "";
+
+      function filteredRows() {
+        return rows.filter(r => {
+          if (filterWho && !(r[options.whoKey] || "").toLowerCase().includes(filterWho.toLowerCase())) return false;
+          if (filterType && r.Type !== filterType) return false;
+          if (search) {
+            const hay = columns.map(c => r[c.key] || "").join(" ").toLowerCase();
+            if (!hay.includes(search.toLowerCase())) return false;
+          }
+          return true;
+        });
+      }
+
+      function sortedRows(list) {
+        const col = columns[sortCol];
+        return [...list].sort((a, b) => {
+          const av = (a[col.key] || "").toLowerCase();
+          const bv = (b[col.key] || "").toLowerCase();
+          if (av < bv) return -1 * sortDir;
+          if (av > bv) return 1 * sortDir;
+          return 0;
+        });
+      }
+
+      function draw() {
+        const list = sortedRows(filteredRows());
+        const whoOpts = options.whoFilter
+          ? `<select id="f-who-${uid}"><option value="">All who</option>
+             <option value="simon">Simon</option><option value="gaythan">Gaythan</option>
+             <option value="both">Both</option></select>` : "";
+        const typeOpts = options.typeFilter
+          ? `<select id="f-type-${uid}"><option value="">All types</option>
+             <option value="confirmed">Confirmed</option><option value="fizzled">Fizzled</option></select>` : "";
+
+        container.innerHTML = `
+          <div class="toolbar">
+            <input type="search" id="f-search-${uid}" placeholder="Search…" value="${esc(search)}">
+            ${whoOpts}${typeOpts}
+            <span class="count">${list.length} of ${rows.length} rows</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${columns.map((c, i) =>
+                `<th data-col="${i}" class="${sortCol === i ? (sortDir === 1 ? "sorted-asc" : "sorted-desc") : ""}">${esc(c.label)}</th>`
+              ).join("")}</tr></thead>
+              <tbody>${list.length ? list.map(r => `<tr>${columns.map(c => {
+                let v = r[c.key] || "";
+                if (c.badge === "who") v = whoBadge(v);
+                else if (c.badge === "type") v = typeBadge(v);
+                else v = esc(v);
+                return `<td class="${c.cls || ""}">${v}</td>`;
+              }).join("")}</tr>`).join("") : `<tr><td colspan="${columns.length}" class="empty">No matching rows</td></tr>`}
+              </tbody>
+            </table>
+          </div>`;
+
+        document.getElementById(`f-search-${uid}`).oninput = e => { search = e.target.value; draw(); };
+        if (options.whoFilter) {
+          const el = document.getElementById(`f-who-${uid}`);
+          el.value = filterWho;
+          el.onchange = e => { filterWho = e.target.value; draw(); };
+        }
+        if (options.typeFilter) {
+          const el = document.getElementById(`f-type-${uid}`);
+          el.value = filterType;
+          el.onchange = e => { filterType = e.target.value; draw(); };
+        }
+        container.querySelectorAll("th").forEach(th => {
+          th.onclick = () => {
+            const col = +th.dataset.col;
+            if (sortCol === col) sortDir *= -1;
+            else { sortCol = col; sortDir = 1; }
+            draw();
+          };
+        });
+      }
+      draw();
+    }
+
+    document.querySelectorAll(".tab[data-tab]").forEach(btn => {
+      btn.onclick = () => switchToTab(btn.dataset.tab);
+    });
+    const prankClose = document.getElementById("prank-close");
+    if (prankClose) prankClose.onclick = () => {
+      const m = document.getElementById("prank-modal");
+      const wrap = document.getElementById("rick-embed");
+      if (m) m.style.display = "none";
+      if (wrap) wrap.innerHTML = "";
+    };
+
+    if (typeof renderDashboardPanel === "function") renderDashboardPanel();
+    setTimeout(() => { if (typeof initDashboardCharts === "function") initDashboardCharts(); }, 40);
+    makeTable("panel-confirmed", [
+      { key: "Date", label: "Date", cls: "date" },
+      { key: "WhoSkipped", label: "Who skipped", badge: "who" },
+      { key: "Planned", label: "Planned" },
+      { key: "Reason", label: "Reason / quote", cls: "quote" },
+      { key: "Outcome", label: "Outcome", cls: "quote" },
+    ], DATA.confirmed, { whoKey: "WhoSkipped", whoFilter: true, defaultSort: 0 });
+
+    makeTable("panel-weekday", [
+      { key: "WeekdayDate", label: "Weekday", cls: "date" },
+      { key: "WhoMentionedPlanned", label: "Who planned", badge: "who" },
+      { key: "WeekendDatePlanned", label: "Weekend", cls: "date" },
+      { key: "Type", label: "Type", badge: "type" },
+      { key: "MidWeekQuote", label: "Mid-week", cls: "quote" },
+      { key: "WeekendOutcome", label: "Weekend outcome", cls: "quote" },
+      { key: "WhoFailed", label: "Who failed", badge: "who" },
+    ], DATA.weekday, { whoKey: "WhoFailed", whoFilter: true, typeFilter: true, defaultSort: 0 });
+
+    makeTable("panel-borderline", [
+      { key: "Date", label: "Date", cls: "date" },
+      { key: "Who", label: "Who", badge: "who" },
+      { key: "Notes", label: "Notes", cls: "quote" },
+    ], DATA.borderline, { whoKey: "Who", whoFilter: true, defaultSort: 0 });
+
+    /* Embedded in share.html — offline canvas charts. Requires global DATA. */
+(function () {
+  const COL = { Simon: "#5b9fd4", Gaythan: "#e07a5f", Both: "#b48ead", muted: "#8b9cb3" };
+  const LANE = { Simon: 0, Gaythan: 1, Both: 2 };
+  const EXCUSE_COL = {
+    "Don't fancy / mood": "#e07a5f",
+    "Injury / physical": "#5b9fd4",
+    "Other plans / work / social": "#f2cc60",
+    "Social / dating / night out": "#b48ead",
+    "Forgot / logistics": "#81a1c1",
+    "Travel / schedule": "#3dd68c",
+    "Other / unclear": "#8b9cb3",
+  };
+  const BUCKET_ORDER = [
+    "After start / none",
+    "<2 hours",
+    "Same day (2-6h)",
+    "Same day (6h+)",
+    "Previous day",
+    "2-3 days",
+    "3+ days",
+    "Unknown",
+  ];
+
+  function parseLooseDate(s) {
+    const m = String(s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (!m) return null;
+    let y = parseInt(m[3], 10);
+    if (y < 100) y += 2000;
+    return new Date(y, parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function quarterKey(d) {
+    const q = Math.floor(d.getMonth() / 3) + 1;
+    return `${d.getFullYear()}-Q${q}`;
+  }
+
+  function quarterLabel(key) {
+    const [y, q] = key.split("-");
+    return `${q} ${y.slice(2)}`;
+  }
+
+  function setupCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth || canvas.offsetWidth || 800;
+    const h = parseInt(canvas.getAttribute("height") || "280", 10);
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.height = h + "px";
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w, h };
+  }
+
+  function prepEvents() {
+    return DATA.confirmed
+      .map((r) => ({
+        date: parseLooseDate(r.Date),
+        who: r.WhoSkipped,
+        reason: (r.Reason || "").slice(0, 120),
+        planned: r.Planned || "",
+        raw: r,
+      }))
+      .filter((e) => e.date)
+      .sort((a, b) => a.date - b.date);
+  }
+
+  let timelineReady = false;
+  let dashboardReady = false;
+
+  function pid(scope, name) {
+    return (scope === "dash" ? "dash-" : "") + name;
+  }
+
+  function drawScatter(canvas, tipEl, compact) {
+    const events = prepEvents();
+    if (!events.length) return;
+    const { ctx, w, h } = setupCanvas(canvas);
+    const pad = compact ? { l: 44, r: 12, t: 18, b: 28 } : { l: 52, r: 16, t: 24, b: 36 };
+    const minT = events[0].date.getTime();
+    const maxT = events[events.length - 1].date.getTime();
+    const span = maxT - minT || 1;
+    const laneH = (h - pad.t - pad.b) / 3;
+
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+
+    const scatterPoints = [];
+    ["Simon", "Gaythan", "Both"].forEach((name, i) => {
+      const y = pad.t + laneH * i + laneH / 2;
+      ctx.fillStyle = COL.muted;
+      ctx.font = (compact ? "10px" : "12px") + " Segoe UI, system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(name, pad.l - 8, y + 4);
+      ctx.strokeStyle = "#2d3a4f";
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    });
+
+    events.forEach((ev, idx) => {
+      const lane = LANE[ev.who] ?? 1;
+      const x = pad.l + ((ev.date.getTime() - minT) / span) * (w - pad.l - pad.r);
+      const y = pad.t + laneH * lane + laneH / 2;
+      const r = compact ? 5 : 7;
+      ctx.beginPath();
+      ctx.fillStyle = COL[ev.who] || COL.muted;
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#0f1419";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      scatterPoints.push({ x, y, r: r + 4, ev, idx });
+    });
+
+    ctx.fillStyle = COL.muted;
+    ctx.font = "11px Segoe UI, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    const years = [...new Set(events.map((e) => e.date.getFullYear()))];
+    years.forEach((yr) => {
+      const d = new Date(yr, 0, 1);
+      if (d.getTime() < minT || d.getTime() > maxT) return;
+      const x = pad.l + ((d.getTime() - minT) / span) * (w - pad.l - pad.r);
+      ctx.fillText(String(yr), x, h - 10);
+    });
+
+    if (!tipEl) return;
+    canvas.onmousemove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let hit = null;
+      for (const p of scatterPoints) {
+        if ((mx - p.x) ** 2 + (my - p.y) ** 2 <= p.r ** 2) {
+          hit = p;
+          break;
+        }
+      }
+      if (!hit) {
+        tipEl.style.display = "none";
+        return;
+      }
+      tipEl.style.display = "block";
+      tipEl.innerHTML = `<strong>${fmtDate(hit.ev.date)} · ${hit.ev.who}</strong><br>${hit.ev.planned}<br><em>${hit.ev.reason}</em>`;
+      let left = e.clientX - rect.left + 12;
+      let top = e.clientY - rect.top + 12;
+      tipEl.style.left = left + "px";
+      tipEl.style.top = top + "px";
+    };
+    canvas.onmouseleave = () => {
+      tipEl.style.display = "none";
+    };
+  }
+
+  function drawQuarterly(canvas) {
+    const events = prepEvents();
+    const { ctx, w, h } = setupCanvas(canvas);
+    const pad = { l: 44, r: 12, t: 20, b: 52 };
+    const buckets = {};
+    events.forEach((ev) => {
+      const k = quarterKey(ev.date);
+      if (!buckets[k]) buckets[k] = { Simon: 0, Gaythan: 0, Both: 0 };
+      buckets[k][ev.who] = (buckets[k][ev.who] || 0) + 1;
+    });
+    const keys = Object.keys(buckets).sort();
+    const max = Math.max(1, ...keys.map((k) => buckets[k].Simon + buckets[k].Gaythan + buckets[k].Both));
+    const barW = Math.max(8, (w - pad.l - pad.r) / keys.length - 4);
+
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+
+    keys.forEach((k, i) => {
+      const x = pad.l + i * (barW + 4);
+      let yBase = h - pad.b;
+      ["Simon", "Gaythan", "Both"].forEach((who) => {
+        const n = buckets[k][who] || 0;
+        const bh = (n / max) * (h - pad.t - pad.b);
+        if (n === 0) return;
+        ctx.fillStyle = COL[who];
+        ctx.fillRect(x, yBase - bh, barW, bh);
+        yBase -= bh;
+      });
+      ctx.fillStyle = COL.muted;
+      ctx.font = "10px Segoe UI, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.save();
+      ctx.translate(x + barW / 2, h - 8);
+      ctx.rotate(-0.5);
+      ctx.fillText(quarterLabel(k), 0, 0);
+      ctx.restore();
+    });
+
+    ctx.fillStyle = COL.muted;
+    ctx.font = "12px Segoe UI, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("Skips per quarter (stacked: Simon → Gaythan → Both)", pad.l, 14);
+  }
+
+  function drawCumulative(canvas, compact) {
+    const events = prepEvents();
+    const { ctx, w, h } = setupCanvas(canvas);
+    const pad = { l: 44, r: 16, t: 24, b: 36 };
+    let s = 0,
+      g = 0,
+      b = 0;
+    const ptsS = [];
+    const ptsG = [];
+    const minT = events[0].date.getTime();
+    const maxT = events[events.length - 1].date.getTime();
+    const span = maxT - minT || 1;
+
+    events.forEach((ev) => {
+      if (ev.who === "Simon") s++;
+      else if (ev.who === "Gaythan") g++;
+      else if (ev.who === "Both") b++;
+      const x = pad.l + ((ev.date.getTime() - minT) / span) * (w - pad.l - pad.r);
+      ptsS.push({ x, y: s });
+      ptsG.push({ x, y: g });
+    });
+
+    const maxY = Math.max(s, g, b, 1);
+
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+
+    function drawLine(pts, color, label) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        const y = h - pad.b - (p.y / maxY) * (h - pad.t - pad.b);
+        if (i === 0) ctx.moveTo(p.x, y);
+        else ctx.lineTo(p.x, y);
+      });
+      ctx.stroke();
+      const last = pts[pts.length - 1];
+      const ly = h - pad.b - (last.y / maxY) * (h - pad.t - pad.b);
+      ctx.fillStyle = color;
+      ctx.font = "12px Segoe UI, system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${label}: ${last.y}`, last.x + 6, ly + 4);
+    }
+
+    drawLine(ptsS, COL.Simon, "Simon");
+    drawLine(ptsG, COL.Gaythan, "Gaythan");
+
+    if (!compact) {
+      ctx.fillStyle = COL.muted;
+      ctx.font = "11px Segoe UI, system-ui, sans-serif";
+      ctx.fillText("Running total of confirmed skips (mutual rounds count once on Both lane only in scatter)", pad.l, 14);
+    }
+  }
+
+  function drawPie(canvas, slices, title) {
+    const total = slices.reduce((a, s) => a + s.value, 0) || 1;
+    const { ctx, w, h } = setupCanvas(canvas);
+    const cx = w / 2;
+    const cy = h / 2 - 8;
+    const r = Math.min(w, h) * 0.32;
+    let a0 = -Math.PI / 2;
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+    slices.forEach((s) => {
+      const a1 = a0 + (s.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.fillStyle = s.color;
+      ctx.arc(cx, cy, r, a0, a1);
+      ctx.closePath();
+      ctx.fill();
+      a0 = a1;
+    });
+    ctx.beginPath();
+    ctx.fillStyle = "#0f1419";
+    ctx.arc(cx, cy, r * 0.52, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = COL.muted;
+    ctx.font = "11px Segoe UI, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(title, cx, cy - 4);
+    ctx.fillStyle = "#e8edf4";
+    ctx.font = "bold 18px Segoe UI, system-ui, sans-serif";
+    ctx.fillText(String(total), cx, cy + 16);
+  }
+
+  function drawAttributionPies(scope) {
+    const s = DATA.stats;
+    const whoEl = document.getElementById(pid(scope, "chart-pie-who"));
+    const excEl = document.getElementById(pid(scope, "chart-pie-excuse"));
+    if (whoEl) {
+      drawPie(
+        whoEl,
+        [
+          { label: "Simon", value: s.simon, color: COL.Simon },
+          { label: "Gaythan", value: s.gaythan, color: COL.Gaythan },
+          { label: "Both", value: s.both, color: COL.Both },
+        ],
+        "Skips"
+      );
+    }
+    const cats = (DATA.analytics && DATA.analytics.excuse_categories) || [];
+    if (excEl) {
+      drawPie(
+        excEl,
+        cats.map((c) => ({
+          label: c.category,
+          value: c.count,
+          color: EXCUSE_COL[c.category] || COL.muted,
+        })),
+        "Reasons"
+      );
+    }
+  }
+
+  function renderTopExcuses(scope, asCards) {
+    const el = document.getElementById(pid(scope, asCards ? "excuse-cards" : "excuse-top5"));
+    if (!el) return;
+    const top = (DATA.analytics && DATA.analytics.top_excuses) || [];
+    if (asCards) {
+      el.innerHTML = top
+        .map(
+          (t) => `<div class="excuse-card">
+        <span class="exc-rank">#${t.rank}</span>
+        <span>${t.category}</span>
+        <span class="exc-count" style="color:${EXCUSE_COL[t.category] || COL.muted}">${t.count}</span>
+      </div>`
+        )
+        .join("");
+      return;
+    }
+    const max = Math.max(1, ...top.map((t) => t.count));
+    el.innerHTML = top
+      .map(
+        (t) => `<li>
+      <span class="rank">${t.rank}</span>
+      <span style="flex:0 0 42%">${t.category}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${(t.count / max) * 100}%;background:${EXCUSE_COL[t.category] || COL.muted}"></div></div>
+      <strong>${t.count}</strong>
+    </li>`
+      )
+      .join("");
+  }
+
+  function renderNoticeCallout() {
+    const el = document.getElementById("notice-callout");
+    const ns = (DATA.analytics && DATA.analytics.notice_summary) || {};
+    if (!el || ns.median_hours == null) return;
+    el.innerHTML = `Median warning: <strong>${ns.median_hours} hours</strong> before inferred tee/session time
+      (Simon median <strong>${ns.simon_median}h</strong>, Gaythan <strong>${ns.gaythan_median}h</strong>).
+      <strong>${ns.under_2h}</strong> of ${ns.known_count} skips gave the other person <strong>&lt;2 hours</strong>;
+      <strong>${ns.after_start}</strong> were after start time or effectively no notice.
+      Mean ${ns.mean_hours}h — pulled up by a few early cancels.`;
+  }
+
+  function drawNoticeBuckets(canvas) {
+    const buckets = (DATA.analytics && DATA.analytics.notice_buckets) || {};
+    const { ctx, w, h } = setupCanvas(canvas);
+    const pad = { l: 44, r: 12, t: 28, b: 72 };
+    const labels = BUCKET_ORDER.filter((k) => buckets[k]);
+    const vals = labels.map((k) => buckets[k] || 0);
+    const max = Math.max(1, ...vals);
+    const barW = Math.max(12, (w - pad.l - pad.r) / labels.length - 6);
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+    labels.forEach((lab, i) => {
+      const n = vals[i];
+      const x = pad.l + i * (barW + 6);
+      const bh = (n / max) * (h - pad.t - pad.b);
+      const y = h - pad.b - bh;
+      const hot = lab.includes("After") || lab.includes("<2");
+      ctx.fillStyle = hot ? "#e07a5f" : "#5b9fd4";
+      ctx.fillRect(x, y, barW, bh);
+      ctx.fillStyle = "#e8edf4";
+      ctx.font = "11px Segoe UI, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(String(n), x + barW / 2, y - 4);
+      ctx.fillStyle = COL.muted;
+      ctx.font = "9px Segoe UI, system-ui, sans-serif";
+      ctx.save();
+      ctx.translate(x + barW / 2, h - 6);
+      ctx.rotate(-0.55);
+      ctx.fillText(lab, 0, 0);
+      ctx.restore();
+    });
+    ctx.fillStyle = COL.muted;
+    ctx.font = "12px Segoe UI, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("How much warning the other person got (skip message → planned session)", pad.l, 16);
+  }
+
+  let noticeScatterPts = [];
+
+  function drawNoticeScatter(canvas, tipEl) {
+    const rows = (DATA.analytics && DATA.analytics.notice) || [];
+    const pts = rows.filter((r) => r.notice_hours != null && r.session_iso);
+    const { ctx, w, h } = setupCanvas(canvas);
+    const pad = { l: 48, r: 16, t: 24, b: 40 };
+    if (!pts.length) return;
+    const dates = pts.map((p) => new Date(p.session_iso).getTime());
+    const minT = Math.min(...dates);
+    const maxT = Math.max(...dates);
+    const span = maxT - minT || 1;
+    const hours = pts.map((p) => p.notice_hours);
+    const minH = Math.min(-2, ...hours);
+    const maxH = Math.max(72, ...hours);
+    const spanH = maxH - minH || 1;
+
+    ctx.fillStyle = "#0f1419";
+    ctx.fillRect(0, 0, w, h);
+    const zeroY = h - pad.b - ((0 - minH) / spanH) * (h - pad.t - pad.b);
+    ctx.strokeStyle = "#e07a5f";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, zeroY);
+    ctx.lineTo(w - pad.r, zeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COL.muted;
+    ctx.font = "10px Segoe UI, system-ui, sans-serif";
+    ctx.fillText("0h = session start", pad.l + 4, zeroY - 6);
+
+    noticeScatterPts = [];
+    pts.forEach((p) => {
+      const t = new Date(p.session_iso).getTime();
+      const x = pad.l + ((t - minT) / span) * (w - pad.l - pad.r);
+      const y = h - pad.b - ((p.notice_hours - minH) / spanH) * (h - pad.t - pad.b);
+      ctx.beginPath();
+      ctx.fillStyle = COL[p.who] || COL.muted;
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      noticeScatterPts.push({ x, y, r: 10, p });
+    });
+    ctx.fillStyle = COL.muted;
+    ctx.font = "11px Segoe UI, system-ui, sans-serif";
+    ctx.fillText("Hours of notice (log scale feel) vs session date — below line = late/no notice", pad.l, 14);
+
+    canvas.onmousemove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let hit = null;
+      for (const pt of noticeScatterPts) {
+        if ((mx - pt.x) ** 2 + (my - pt.y) ** 2 <= pt.r ** 2) {
+          hit = pt;
+          break;
+        }
+      }
+      if (!hit) {
+        tipEl.style.display = "none";
+        return;
+      }
+      tipEl.style.display = "block";
+      const h = hit.p.notice_hours;
+      tipEl.innerHTML = `<strong>${hit.p.date} · ${hit.p.who}</strong><br>${h.toFixed(1)}h notice · ${hit.p.bucket}<br><em>${(hit.p.note || "").slice(0, 100)}</em>`;
+      tipEl.style.left = mx + 12 + "px";
+      tipEl.style.top = my + 12 + "px";
+    };
+    canvas.onmouseleave = () => {
+      tipEl.style.display = "none";
+    };
+  }
+
+  function renderWorstNotice(scope, limit) {
+    const el = document.getElementById(pid(scope, "worst-notice"));
+    if (!el) return;
+    const worst = (DATA.analytics && DATA.analytics.worst_notice) || [];
+    const n = limit || 6;
+    el.innerHTML = `<ul class="worst-notice">${worst
+      .slice(0, n)
+      .map((w) => {
+        const h = w.notice_hours;
+        const label = h < 0 ? `${Math.abs(h).toFixed(1)}h after start` : `${h.toFixed(1)}h before`;
+        return `<li><strong>${w.date}</strong> ${w.who} — ${label} · ${w.category}${w.note ? ` — <span style="color:var(--muted)">${w.note.slice(0, 70)}</span>` : ""}</li>`;
+      })
+      .join("")}</ul>`;
+  }
+
+  function drawWeekendFlow(container) {
+    const rows = DATA.weekday || [];
+    container.innerHTML = "";
+    rows.forEach((r) => {
+      const card = document.createElement("div");
+      card.className = "wk-flow-card " + (r.Type === "fizzled" ? "fizzled" : "confirmed");
+      const who = (r.WhoFailed || "").toLowerCase();
+      let badge = "badge-muted";
+      if (who.includes("simon") && !who.includes("gaythan")) badge = "badge-simon";
+      else if (who.includes("gaythan") && !who.includes("simon")) badge = "badge-gaythan";
+      else if (who.includes("both")) badge = "badge-both";
+      card.innerHTML = `
+        <div class="wk-flow-top">
+          <span class="badge ${r.Type === "confirmed" ? "badge-confirmed" : "badge-fizzled"}">${r.Type}</span>
+          <span class="badge ${badge}">${r.WhoFailed || "?"}</span>
+        </div>
+        <div class="wk-flow-row">
+          <div class="wk-node"><div class="wk-label">Mid-week plan</div><div class="wk-date">${r.WeekdayDate}</div><div class="wk-snippet">${(r.MidWeekQuote || "").replace(/"/g, "'").slice(0, 90)}…</div></div>
+          <div class="wk-arrow" aria-hidden="true">→</div>
+          <div class="wk-node"><div class="wk-label">Weekend</div><div class="wk-date">${r.WeekendDatePlanned}</div><div class="wk-snippet">${(r.WeekendOutcome || "").replace(/"/g, "'").slice(0, 90)}…</div></div>
+        </div>`;
+      container.appendChild(card);
+    });
+  }
+
+  function renderTimelineLegend() {
+    const s = DATA.stats;
+    const el = document.getElementById("timeline-legend");
+    if (!el) return;
+    el.innerHTML = `
+      <span><i class="dot simon"></i> Simon <strong>${s.simon}</strong></span>
+      <span><i class="dot gaythan"></i> Gaythan <strong>${s.gaythan}</strong></span>
+      <span><i class="dot both"></i> Both <strong>${s.both}</strong></span>
+      <span class="tl-note">42 dated confirmed skips · Jun 2020 – Jun 2025 · hover dots for quotes</span>`;
+  }
+
+  function redrawScope(scope, opts) {
+    const compact = opts && opts.compact;
+    drawAttributionPies(scope);
+    renderTopExcuses(scope, scope === "dash");
+    if (scope === "tl") renderNoticeCallout();
+    renderWorstNotice(scope, scope === "dash" ? 5 : 6);
+    const buckets = document.getElementById(pid(scope, "chart-notice-buckets"));
+    if (buckets) drawNoticeBuckets(buckets);
+    if (scope === "tl") {
+      drawNoticeScatter(document.getElementById("chart-notice-scatter"), document.getElementById("tip-notice"));
+    }
+    const scatter = document.getElementById(pid(scope, "chart-scatter"));
+    const tip = document.getElementById(pid(scope, "tip-scatter"));
+    if (scatter) drawScatter(scatter, tip, compact);
+    const q = document.getElementById(pid(scope, "chart-quarterly"));
+    if (q) drawQuarterly(q);
+    const cum = document.getElementById(pid(scope, "chart-cumulative"));
+    if (cum) drawCumulative(cum, compact);
+  }
+
+  function drawWeekendStrip(container) {
+    if (!container) return;
+    const rows = DATA.weekday || [];
+    container.innerHTML = rows
+      .map((r) => {
+        const cls = r.Type === "fizzled" ? "fizzled" : "confirmed";
+        return `<div class="wk-strip-item ${cls}">
+        <div><span class="badge ${r.Type === "confirmed" ? "badge-confirmed" : "badge-fizzled"}">${r.Type}</span>
+        ${r.WhoFailed || ""}</div>
+        <div style="margin-top:0.35rem"><strong>${r.WeekdayDate}</strong> → ${r.WeekendDatePlanned}</div>
+        <div style="color:var(--muted);margin-top:0.25rem">${(r.WeekendOutcome || "").replace(/"/g, "'").slice(0, 55)}…</div>
+      </div>`;
+      })
+      .join("");
+  }
+
+  window.initDashboardCharts = function () {
+    redrawScope("dash", { compact: true });
+    drawWeekendStrip(document.getElementById("dash-wk-strip"));
+    dashboardReady = true;
+  };
+
+  window.initTimelineCharts = function () {
+    if (timelineReady) {
+      redrawScope("tl");
+      return;
+    }
+    renderTimelineLegend();
+    redrawScope("tl");
+    drawWeekendFlow(document.getElementById("wk-flow"));
+    timelineReady = true;
+  };
+
+  window.renderDashboardPanel = function () {
+    const panel = document.getElementById("panel-dashboard");
+    if (!panel || panel.dataset.built) return;
+    const s = DATA.stats;
+    const ns = (DATA.analytics && DATA.analytics.notice_summary) || {};
+    const pctSame =
+      ns.known_count && ns.same_day != null
+        ? Math.round((ns.same_day / ns.known_count) * 100)
+        : "—";
+    panel.innerHTML = `
+      <p class="dashboard-lead">Executive view — 42 confirmed golf skips from WhatsApp (2020–2025). Same data as the tables; charts are offline in this file.</p>
+      <div class="kpi-row">
+        <div class="kpi kpi-accent"><div class="kpi-val">${s.confirmed_total}</div><div class="kpi-lbl">Confirmed skips</div></div>
+        <div class="kpi kpi-simon"><div class="kpi-val">${s.simon}</div><div class="kpi-lbl">Simon skipped</div></div>
+        <div class="kpi kpi-gaythan"><div class="kpi-val">${s.gaythan}</div><div class="kpi-lbl">Gaythan skipped</div></div>
+        <div class="kpi kpi-both"><div class="kpi-val">${s.both}</div><div class="kpi-lbl">Both skipped</div></div>
+        <div class="kpi kpi-accent"><div class="kpi-val">${ns.median_hours != null ? ns.median_hours + "h" : "—"}</div><div class="kpi-lbl">Median notice</div></div>
+        <div class="kpi kpi-warn"><div class="kpi-val">${pctSame}%</div><div class="kpi-lbl">Same-day cancel</div></div>
+        <div class="kpi kpi-warn"><div class="kpi-val">${ns.under_2h || 0}</div><div class="kpi-lbl">&lt;2h notice</div></div>
+        <div class="kpi kpi-warn"><div class="kpi-val">${ns.after_start || 0}</div><div class="kpi-lbl">After start / none</div></div>
+      </div>
+      <div class="dash-grid-3">
+        <div class="dash-panel"><h3>Who skipped</h3><p class="chart-sub">Share of 42 confirmed</p><canvas id="dash-chart-pie-who" height="160"></canvas></div>
+        <div class="dash-panel"><h3>Excuse mix</h3><p class="chart-sub">One category per row</p><canvas id="dash-chart-pie-excuse" height="160"></canvas></div>
+        <div class="dash-panel"><h3>Top 5 excuses</h3><p class="chart-sub">By frequency (ties at top)</p><div id="dash-excuse-cards" class="excuse-cards"></div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-panel"><h3>Notice buckets</h3><p class="chart-sub">Warning time before inferred session</p><canvas id="dash-chart-notice-buckets" height="220"></canvas></div>
+        <div class="dash-panel"><h3>Cumulative skips</h3><p class="chart-sub">Simon vs Gaythan over time</p><canvas id="dash-chart-cumulative" height="220"></canvas></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-panel"><h3>Quarterly volume</h3><p class="chart-sub">Stacked by who skipped</p><canvas id="dash-chart-quarterly" height="200"></canvas></div>
+        <div class="dash-panel"><h3>Skip timeline</h3><p class="chart-sub">Hover dots for quotes</p>
+          <div class="chart-wrap scatter-wrap"><canvas id="dash-chart-scatter" height="160"></canvas><div id="dash-tip-scatter" class="chart-tip"></div></div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-panel callout-panel"><h3>Shortest notice (worst 5)</h3><p class="chart-sub">Cancel message vs planned tee — see Methodology</p><div id="dash-worst-notice"></div></div>
+        <div class="dash-panel"><h3>Weekday plan → weekend</h3><p class="chart-sub">${s.weekday_confirmed} confirmed · ${s.weekday_fizzled} fizzled — scroll →</p><div id="dash-wk-strip" class="wk-strip"></div></div>
+      </div>
+      <div class="dash-bottomline">
+        <h3>Bottom line</h3>
+        <ul>
+          <li><strong>Gaythan</strong> accounts for more confirmed skips (${s.gaythan} vs Simon ${s.simon}); many are mood / “don't fancy it”.</li>
+          <li><strong>Simon</strong> skips cluster around work, injury, and social conflicts — often with little notice (median ${ns.simon_median || "?"}h).</li>
+          <li><strong>Notice:</strong> median ${ns.median_hours || "?"}h overall; ${ns.under_2h || 0} under 2 hours; ${ns.after_start || 0} after session start.</li>
+          <li>Weekday enthusiasm often dies by the weekend — see strip above and full tab.</li>
+        </ul>
+      </div>
+      <div class="dash-data-nav">
+        <span>Full data:</span>
+        <button type="button" class="dash-link" data-goto="confirmed">Confirmed table (${s.confirmed_total})</button>
+        <button type="button" class="dash-link" data-goto="weekday">Weekday→weekend (${(DATA.weekday || []).length})</button>
+        <button type="button" class="dash-link" data-goto="borderline">Borderline (${s.borderline})</button>
+        <button type="button" class="dash-link" data-goto="timeline">Over time (detail)</button>
+        <button type="button" class="dash-link" data-goto="audit">Audit trail (Nathan)</button>
+        <button type="button" class="dash-link" data-goto="methodology">Methodology</button>
+      </div>`;
+    panel.dataset.built = "1";
+    panel.querySelectorAll(".dash-link[data-goto]").forEach((btn) => {
+      btn.onclick = () => {
+        if (typeof switchToTab === "function") switchToTab(btn.dataset.goto);
+      };
+    });
+    requestAnimationFrame(() => initDashboardCharts());
+  };
+
+  window.renderTimelinePanel = function () {
+    const panel = document.getElementById("panel-timeline");
+    if (!panel || panel.dataset.built) return;
+    panel.innerHTML = `
+      <div id="timeline-legend" class="timeline-legend"></div>
+      <p class="chart-lead">Visual proof from the same 42 confirmed rows in the tables — not a separate count.</p>
+      <div class="chart-grid-3">
+        <div class="chart-card">
+          <h3>Who skipped (pie)</h3>
+          <p class="chart-sub">Simon ${DATA.stats.simon} · Gaythan ${DATA.stats.gaythan} · Both ${DATA.stats.both}</p>
+          <canvas id="chart-pie-who" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Excuse categories (pie)</h3>
+          <p class="chart-sub">Keyword rules on Reason + Planned fields</p>
+          <canvas id="chart-pie-excuse" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Top 5 excuse types</h3>
+          <p class="chart-sub">Ranked by count (ties possible)</p>
+          <ul id="excuse-top5" class="excuse-list"></ul>
+        </div>
+      </div>
+      <div id="notice-callout" class="notice-callout"></div>
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <h3>Notice buckets — how little warning?</h3>
+          <p class="chart-sub">Cancel/skip message time vs inferred session start (WhatsApp timestamps)</p>
+          <canvas id="chart-notice-buckets" height="280"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Notice hours vs session date</h3>
+          <p class="chart-sub">Dots below the red line = late or no warning</p>
+          <div class="chart-wrap scatter-wrap">
+            <canvas id="chart-notice-scatter" height="280"></canvas>
+            <div id="tip-notice" class="chart-tip"></div>
+          </div>
+          <div id="worst-notice"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Timeline — every confirmed skip</h3>
+        <p class="chart-sub">Each dot is one dated skip. Lane = who failed. Hover for reason.</p>
+        <div class="chart-wrap scatter-wrap">
+          <canvas id="chart-scatter" height="220"></canvas>
+          <div id="tip-scatter" class="chart-tip"></div>
+        </div>
+      </div>
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <h3>Quarterly volume (stacked)</h3>
+          <canvas id="chart-quarterly" height="260"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Cumulative skips over time</h3>
+          <canvas id="chart-cumulative" height="260"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Weekday plan → weekend outcome</h3>
+        <p class="chart-sub">Green = confirmed weekend failure · Yellow = fizzled plan</p>
+        <div id="wk-flow" class="wk-flow"></div>
+      </div>`;
+    panel.dataset.built = "1";
+    requestAnimationFrame(() => initTimelineCharts());
+  };
+
+  window.addEventListener("resize", () => {
+    if (dashboardReady) initDashboardCharts();
+    if (timelineReady) initTimelineCharts();
+  });
+})();
+
+  </script>
+</body>
+</html>

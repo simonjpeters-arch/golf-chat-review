@@ -1,0 +1,68 @@
+<!-- embedded in share.html via build_html.py -->
+<div class="methodology-wrap">
+  <p class="method-intro">How this analysis was built — source data, search rules, inclusion criteria, and limitations. Everything in this file is self-contained; no other files required.</p>
+  <section id="m-source"><h2>1. Source data</h2>
+  <table><tr><th>Field</th><th>Value</th></tr>
+  <tr><td>File</td><td><code>WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+  <tr><td>Path</td><td><code class="path">C:\Users\simon\Downloads\WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+  <tr><td>Format</td><td>WhatsApp text export</td></tr>
+  <tr><td>Size</td><td>~6.6 MB</td></tr>
+  <tr><td>Date range</td><td>June 2020 – 2026</td></tr>
+  <tr><td>Participants</td><td>Simon (🥸) and Gaythan Sandridge</td></tr>
+  <tr><td>Golf mentions</td><td>~663 lines containing “golf”</td></tr></table>
+  <p>The raw chat was not included in this file. Findings come from searching and reading that export.</p></section>
+
+  <section id="m-scope"><h2>2. Scope — what counts as golf</h2>
+  <h3><span class="tag tag-in">Included</span></h3>
+  <ul><li><strong>Pitch / range</strong> — Urban Golf, Pitch Golf, bay bookings</li>
+  <li><strong>Real / 18-hole</strong> — Trent Park, MK trips, tee times</li>
+  <li><strong>Planned together</strong> — invites, bookings, weekend plans</li>
+  <li><strong>Skip outcomes</strong> — bail, cancel, no-show, solo because other bailed</li></ul>
+  <h3><span class="tag tag-out">Excluded</span></h3>
+  <table><tr><th>Exclusion</th><th>Reason</th></tr>
+  <tr><td>Skipping rope</td><td>Not golf</td></tr>
+  <tr><td>Swim golf</td><td>Swimming context</td></tr>
+  <tr><td>News links / hyperbole</td><td>Not dated skips</td></tr>
+  <tr><td>Mini-golf / virtual PGA only</td><td>Not irl joint rounds</td></tr>
+  <tr><td>Non-golf bailing</td><td>Dinner, drugs, races, etc.</td></tr></table></section>
+
+  <section id="m-search"><h2>3. Search approach</h2>
+  <p>Systematic grep over the full export, then <strong>manual context reading</strong> (±20–50 lines per hit).</p>
+  <h3>Primary patterns</h3>
+  <ul><li><code>golf</code> — all ~663 mentions</li>
+  <li>Golf + time: weekend, Saturday, Sunday, tomorrow, tonight, Friday</li>
+  <li>Golf + failure: skip, bail, cancel, pull out, not turn, no show</li></ul>
+  <h3>Apology / bail phrasing (golf context)</h3>
+  <div class="card"><code>sorry not coming</code> · <code>sorry can't make</code> · <code>not coming</code> · <code>can't make it</code> · <code>won't make it</code> · <code>pull out</code> · <code>bailing</code> · <code>not turning up</code> · <code>decided against</code> · <code>don't fancy</code> · <code>not going to be able</code> · <code>haven't gone golf</code> · <code>shall I cancel</code> · <code>go ahead and cancel</code></div>
+  <h3>Weekday → weekend pass</h3>
+  <p>Mon–Thu golf mentions referencing Fri–Sun, traced forward for outcome.</p></section>
+
+  <section id="m-inclusion"><h2>4. Inclusion criteria</h2>
+  <h3>Confirmed no-show</h3>
+  <ol><li>Planned or booked golf together</li><li>One party did not attend or both cancelled</li><li>Identifiable date</li><li>Clear attribution (Simon / Gaythan / Both)</li></ol>
+  <h3>Borderline</h3>
+  <ul><li>Ambiguous golf context</li><li>Double-booking awareness</li><li>Aggregate accusations without one dated round</li><li>Wrong activity (swim, virtual PGA, etc.)</li><li>Forgot to book</li></ul>
+  <h3>False positive</h3>
+  <p>Looked like skip but they played (reluctance then rescheduled).</p></section>
+
+  <section id="m-weekday"><h2>5. Weekday → weekend logic</h2>
+  <table><tr><th>Step</th><th>Rule</th></tr>
+  <tr><td>1</td><td>Find Mon–Thu golf referencing upcoming Fri–Sun</td></tr>
+  <tr><td>2</td><td>Record who planned and mid-week quote</td></tr>
+  <tr><td>3</td><td>Read weekend messages for outcome</td></tr>
+  <tr><td>4</td><td><strong>Confirmed</strong> — explicit skip on planned weekend</td></tr>
+  <tr><td>5</td><td><strong>Fizzled</strong> — agreed mid-week but no round / never booked</td></tr>
+  <tr><td>6</td><td><strong>Who failed</strong> — bailer, both, or Unclear</td></tr></table></section>
+
+  <section id="m-stats"><h2>6. Summary stats</h2>
+  <table><tr><th>Label</th><th>Rule</th></tr>
+  <tr><td>Simon / Gaythan</td><td>Party who declined, cancelled, or no-showed</td></tr>
+  <tr><td>Both</td><td>Mutual cancel — counted once, not double</td></tr></table>
+  <div class="card warn"><strong>42 vs 44:</strong> Narrative cites 44 confirmed; dated table has <strong>42 rows</strong> (17 Simon + 22 Gaythan + 3 Both). This viewer uses 42 as the authoritative dated list.</div></section>
+
+  <section id="m-visual"><h2>7. Over time (visual tab)</h2>
+  <p>The <strong>Over time</strong> tab charts the same 42 confirmed rows as the tables — no separate dataset. Canvas charts (offline, embedded JS): pies (who skipped + excuse categories), top-5 excuse list, notice-time buckets and scatter (WhatsApp cancel time vs inferred session start), scatter timeline, quarterly bars, cumulative lines, and weekday→weekend cards.</p></section>
+
+  <section id="m-limits"><h2>8. Limitations</h2>
+  <ul><li>Export gaps — deleted messages invisible</li><li>Ambiguous banter requires context</li><li>Date inference when play date not explicit</li><li>Solo play = skip for absent party</li><li>Manual classification, not fully automated</li><li>Private chat — share responsibly</li></ul></section>
+</div>

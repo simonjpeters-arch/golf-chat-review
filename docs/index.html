@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2820">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Golf Skips">
+  <title>Golf Skip Review</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Golf skip / no-show review</h1>
+    <p class="sub">Simon &amp; Gaythan · phone app · Add to Home Screen</p>
+    <p class="honesty">WhatsApp does not allow apps to pull chats automatically. Export the chat (without media) and import it here to refresh.</p>
+    <div id="meta-strip" class="meta-strip"></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="import" role="tab">Update</button>
+      <button class="tab" data-tab="dashboard" role="tab">Dashboard</button>
+      <button class="tab" data-tab="confirmed" role="tab">Confirmed</button>
+      <button class="tab" data-tab="weekday" role="tab">Weekday → weekend</button>
+      <button class="tab" data-tab="borderline" role="tab">Borderline</button>
+      <button class="tab" data-tab="timeline" role="tab">Over time</button>
+      <button class="tab" data-tab="audit" role="tab">Audit trail</button>
+      <button class="tab" data-tab="install" role="tab">Install</button>
+    </nav>
+  </header>
+  <main>
+    <section id="panel-import" class="panel active" role="tabpanel">
+      <div class="import-card" id="dropzone">
+        <h2>Import official WhatsApp export</h2>
+        <p class="dropzone">Drop a <code>.txt</code> or <code>.zip</code> here, or pick a file. Use <strong>Without media</strong>.</p>
+        <input id="file-input" type="file" accept=".txt,.zip,text/plain,application/zip">
+        <div class="btn-row">
+          <button type="button" class="btn btn-accent" id="pick-file">Choose export file</button>
+        </div>
+        <p class="status-msg" id="import-status"></p>
+        <p class="status-msg" id="auto-note"></p>
+      </div>
+      <details class="howto import-card" open>
+        <summary>Android — export then import</summary>
+        <ol>
+          <li>Open the 1:1 chat with Gaythan.</li>
+          <li>Three dots → <strong>More</strong> → <strong>Export chat</strong>.</li>
+          <li>Choose <strong>Without media</strong>.</li>
+          <li>Save the <code>.txt</code> or <code>.zip</code> to Files / Drive.</li>
+          <li>Return here → Choose export file (or share the file into this app if the picker shows it).</li>
+        </ol>
+      </details>
+      <details class="howto import-card">
+        <summary>iPhone — export then Open in this app</summary>
+        <ol>
+          <li>Open the chat → tap the contact name at the top.</li>
+          <li><strong>Export Chat</strong> → <strong>Without Media</strong>.</li>
+          <li>Save to <strong>Files</strong> (On My iPhone or iCloud Drive).</li>
+          <li>In this app, tap Choose export file → <strong>Browse</strong> → Files → pick the export.</li>
+          <li>If you use Share from Files, pick this Home Screen app if it appears under Open in…</li>
+        </ol>
+      </details>
+      <div class="summary-block">
+        <h2>What this app cannot do</h2>
+        <ul>
+          <li>It cannot log into WhatsApp, scrape WhatsApp Web, or download the thread by itself. That would violate WhatsApp’s terms.</li>
+          <li>After the first load, the dashboard works offline; <em>updating</em> still needs a new export file.</li>
+          <li>Last import + results stay on this phone (IndexedDB / localStorage).</li>
+        </ul>
+      </div>
+    </section>
+    <section id="panel-dashboard" class="panel" role="tabpanel"></section>
+    <section id="panel-confirmed" class="panel" role="tabpanel"></section>
+    <section id="panel-weekday" class="panel" role="tabpanel"></section>
+    <section id="panel-borderline" class="panel" role="tabpanel"></section>
+    <section id="panel-timeline" class="panel" role="tabpanel"></section>
+    <section id="panel-audit" class="panel" role="tabpanel"></section>
+    <section id="panel-install" class="panel" role="tabpanel">
+      <div class="summary-block">
+        <h2>Add to Home Screen (this is the “install”)</h2>
+        <p>GitHub cannot put a binary on the App Store. Open this HTTPS site in the phone browser, then:</p>
+        <h3>iPhone (Safari)</h3>
+        <ol>
+          <li>Open the GitHub Pages link in <strong>Safari</strong> (not in-app Instagram/Chrome wrappers if Add to Home Screen is missing).</li>
+          <li>Share → <strong>Add to Home Screen</strong> → Add.</li>
+        </ol>
+        <h3>Android (Chrome)</h3>
+        <ol>
+          <li>Open the same link in Chrome.</li>
+          <li>Menu → <strong>Install app</strong> or <strong>Add to Home Screen</strong>.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+  <footer class="page-footer">Analysis runs in your browser · no WhatsApp API · share.html still exists for emailing a snapshot</footer>
+
+  <div id="prank-modal" class="prank-modal" role="dialog" aria-labelledby="stamp-title">
+    <div class="prank-card">
+      <div class="rick-embed" id="rick-embed"></div>
+      <div class="stamp">
+        <h2 id="stamp-title">Independent Reliability Rating</h2>
+        <p>Certified finding (banter edition)</p>
+        <p class="joke">Nathan is more unreliable than a North Korean ICBM.</p>
+        <p class="disclaimer">Joke / group-chat energy only — not an intelligence assessment, not a real missile rating, not evidence in the golf ledger. The Audit trail table is the actual data. Press play if the clip is paused.</p>
+        <button type="button" class="btn btn-accent" id="prank-close">Back to the real numbers</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/seed-data.js"></script>
+  <script src="./js/parse-whatsapp.js"></script>
+  <script src="./js/analysis.js"></script>
+  <script src="./js/store.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

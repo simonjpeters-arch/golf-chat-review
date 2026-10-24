@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Methodology — Golf No-Show Analysis</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3dd68c;
+      --simon: #5b9fd4;
+      --gaythan: #e07a5f;
+      --border: #2d3a4f;
+      --radius: 10px;
+      --code-bg: #121820;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    header {
+      background: linear-gradient(135deg, #1a2332 0%, #0f2820 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1rem;
+    }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; }
+    header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .nav { margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .nav a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .nav a:hover { background: var(--surface2); }
+    .nav a.primary { background: rgba(61,214,140,0.12); border-color: rgba(61,214,140,0.35); }
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+    .toc {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      padding: 1.25rem 1rem;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+    .toc h2 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+    .toc a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid transparent;
+    }
+    .toc a:hover { color: var(--accent); }
+    .content { padding: 1.25rem 1.5rem 3rem; min-width: 0; }
+    section {
+      margin-bottom: 2.5rem;
+      scroll-margin-top: 1rem;
+    }
+    section h2 {
+      font-size: 1.25rem;
+      color: var(--accent);
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 {
+      font-size: 1rem;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--text);
+    }
+    p { margin: 0 0 0.75rem; color: #c5d0de; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.35rem; color: #c5d0de; }
+    li { margin-bottom: 0.35rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+    code, .path {
+      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      font-size: 0.85em;
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #a8d4ff;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card.warn { border-color: rgba(242,204,96,0.4); background: rgba(242,204,96,0.06); }
+    .pipeline {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #a8d4ff;
+      overflow-x: auto;
+      white-space: pre;
+      margin-bottom: 1rem;
+    }
+    .tag {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.25rem;
+    }
+    .tag-in { background: rgba(61,214,140,0.15); color: var(--accent); }
+    .tag-out { background: rgba(224,122,95,0.15); color: var(--gaythan); }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Analysis methodology &amp; logic</h1>
+    <p>How the golf no-show review was built · shareable documentation</p>
+    <nav class="nav">
+      <a href="index.html" class="primary">← Back to data viewer</a>
+      <a href="METHODOLOGY.md">Markdown version</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="toc">
+      <h2>Contents</h2>
+      <a href="#source">Source data</a>
+      <a href="#scope">Scope</a>
+      <a href="#search">Search approach</a>
+      <a href="#inclusion">Inclusion criteria</a>
+      <a href="#weekday">Weekday → weekend</a>
+      <a href="#stats">Summary stats</a>
+      <a href="#pipeline">Build pipeline</a>
+      <a href="#limits">Limitations</a>
+    </aside>
+
+    <article class="content">
+      <section id="source">
+        <h2>1. Source data</h2>
+        <table>
+          <tr><th>Field</th><th>Value</th></tr>
+          <tr><td>File</td><td><code>WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+          <tr><td>Path</td><td><code class="path">C:\Users\simon\Downloads\WhatsApp Chat with Gaythan Sandridge.txt</code></td></tr>
+          <tr><td>Format</td><td>WhatsApp text export (<code>M/D/YY, time - Sender: message</code>)</td></tr>
+          <tr><td>Size</td><td>~6.6 MB</td></tr>
+          <tr><td>Date range</td><td>June 2020 – 2026</td></tr>
+          <tr><td>Participants</td><td>Simon (🥸) and Gaythan Sandridge</td></tr>
+          <tr><td>Golf mentions</td><td>~663 lines containing “golf”</td></tr>
+        </table>
+        <p>The raw chat was not copied into this project. All findings come from searching and reading that export.</p>
+      </section>
+
+      <section id="scope">
+        <h2>2. Scope — what counts as golf</h2>
+        <h3><span class="tag tag-in">Included</span></h3>
+        <ul>
+          <li><strong>Pitch / range</strong> — Urban Golf, Pitch Golf, bay bookings, membership sessions</li>
+          <li><strong>Real / 18-hole</strong> — Trent Park, courses outside London, MK trips, tee times</li>
+          <li><strong>Planned together</strong> — invites, bookings, “golf later / tomorrow / this weekend”</li>
+          <li><strong>Skip outcomes</strong> — bail, cancel, no-show, or one played solo because the other didn’t come</li>
+        </ul>
+        <h3><span class="tag tag-out">Excluded</span></h3>
+        <table>
+          <tr><th>Exclusion</th><th>Reason</th></tr>
+          <tr><td>Skipping rope / exercise</td><td>“skip” not golf-related</td></tr>
+          <tr><td>Swim golf</td><td>Swimming context</td></tr>
+          <tr><td>News links</td><td>Third-party content</td></tr>
+          <tr><td>Hyperbole</td><td>Jokes like “can't play golf anymore”</td></tr>
+          <tr><td>Mini-golf only</td><td>Not usual joint activity</td></tr>
+          <tr><td>Virtual PGA only</td><td>Video game, not irl</td></tr>
+          <tr><td>Non-golf bailing</td><td>Dinner, drugs, races, etc.</td></tr>
+        </table>
+      </section>
+
+      <section id="search">
+        <h2>3. Search approach</h2>
+        <p>Systematic grep over the full export, then <strong>manual context reading</strong> around each hit (typically ±20–50 lines).</p>
+        <h3>Primary patterns</h3>
+        <ul>
+          <li><code>golf</code> — all mentions reviewed or filtered by pattern</li>
+          <li>Golf + time: <code>this weekend</code>, <code>Saturday</code>, <code>Sunday</code>, <code>tomorrow</code>, <code>tonight</code>, <code>Friday</code></li>
+          <li>Golf + failure: <code>skip</code>, <code>bail</code>, <code>cancel</code>, <code>pull out</code>, <code>not turn</code>, <code>no show</code></li>
+        </ul>
+        <h3>Apology / bail phrasing (in golf context)</h3>
+        <div class="card">
+          <code>sorry not coming</code> · <code>sorry can't make</code> · <code>not coming</code> · <code>can't make it</code> · <code>won't make it</code> · <code>can't do tonight</code> · <code>pull out</code> · <code>bailing</code> · <code>not turning up</code> · <code>decided against</code> · <code>don't fancy</code> · <code>not going to be able</code> · <code>haven't gone golf</code> · <code>you go by all means</code> · <code>shall I cancel</code> · <code>go ahead and cancel</code>
+        </div>
+        <h3>Weekday → weekend pass</h3>
+        <p>Additional search for <strong>Mon–Thu</strong> messages referencing upcoming <strong>Fri–Sun</strong> golf, then trace forward to the weekend for outcome.</p>
+      </section>
+
+      <section id="inclusion">
+        <h2>4. Inclusion criteria</h2>
+        <h3>Confirmed no-show</h3>
+        <p>All must apply:</p>
+        <ol>
+          <li>Planned or booked golf together (or clear same-day invite)</li>
+          <li>One party did not attend, or both agreed to cancel</li>
+          <li>Identifiable date (message or referenced play date)</li>
+          <li>Clear attribution — Simon, Gaythan, or Both</li>
+        </ol>
+        <h3>Borderline / unclear</h3>
+        <ul>
+          <li>Ambiguous golf context (e.g. “Not coming boo” on a cycle ride)</li>
+          <li>Double-booking awareness, not a skip with Simon</li>
+          <li>Membership frustration, not one session</li>
+          <li>Aggregate accusations (“54th booking”) without one dated round</li>
+          <li>Wrong activity (swim, drug delivery, virtual PGA, running race)</li>
+          <li>Forgot to book — organisation failure, not a skip</li>
+        </ul>
+        <h3>False positive (documented separately)</h3>
+        <p>Looked like a skip but they <strong>played</strong> — e.g. reluctance then moved to 5pm/6pm; banter “you bailing” then went anyway.</p>
+      </section>
+
+      <section id="weekday">
+        <h2>5. Weekday → weekend failure logic</h2>
+        <table>
+          <tr><th>Step</th><th>Rule</th></tr>
+          <tr><td>1</td><td>Find golf on <strong>Mon–Thu</strong> referencing upcoming <strong>Fri–Sun</strong></td></tr>
+          <tr><td>2</td><td>Record who planned and mid-week quote</td></tr>
+          <tr><td>3</td><td>Read Fri–Sun (and Mon after if away) for outcome</td></tr>
+          <tr><td>4</td><td><strong>Confirmed</strong> — explicit skip/cancel on planned weekend</td></tr>
+          <tr><td>5</td><td><strong>Fizzled</strong> — agreed mid-week but no round; never booked; silent drop</td></tr>
+          <tr><td>6</td><td><strong>Who failed</strong> — bailer, both, or Unclear</td></tr>
+        </table>
+        <p><strong>Confirmed example:</strong> Thu 10/27/22 plan for Sat Trent → Sat both skipped.</p>
+        <p><strong>Fizzled example:</strong> Mon 2/27/23 “golf maybe this weekend” → never booked.</p>
+      </section>
+
+      <section id="stats">
+        <h2>6. Summary statistics methodology</h2>
+        <table>
+          <tr><th>Label</th><th>Attribution rule</th></tr>
+          <tr><td>Simon</td><td>Simon declined, cancelled, no-showed, or caused joint round to fail</td></tr>
+          <tr><td>Gaythan</td><td>Same for Gaythan</td></tr>
+          <tr><td>Both</td><td>Mutual cancel / both skipped — counted once, not double</td></tr>
+        </table>
+        <div class="card warn">
+          <strong>42 vs 44 count:</strong> Narrative summary cites 44 confirmed (17 + 24 + 3). The dated table and CSV contain <strong>42 rows</strong> (17 Simon + 22 Gaythan + 3 Both). Two Gaythan entries in the narrative total are not separate dated rows in the final table. <strong>CSV and HTML use 42</strong> as the authoritative dated list.
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <h2>7. Build pipeline</h2>
+        <div class="pipeline">WhatsApp export (grep + manual review)
+        ↓
+GOLF-NO-SHOWS.md
+        ↓
+export_csv.py  →  confirmed-no-shows.csv
+              →  weekday-weekend-failures.csv
+              →  borderline.csv
+              →  golf-analysis.csv
+        ↓
+build_html.py  →  index.html (interactive viewer)
+logic.html     →  this page
+METHODOLOGY.md →  markdown version</div>
+        <table>
+          <tr><th>Script</th><th>Input</th><th>Output</th></tr>
+          <tr><td><code>export_csv.py</code></td><td>Embedded row data</td><td>CSV files (RFC 4180 quoting)</td></tr>
+          <tr><td><code>build_html.py</code></td><td>CSV files</td><td><code>index.html</code> with search &amp; sort</td></tr>
+        </table>
+        <p>Regenerate: <code>python export_csv.py</code> then <code>python build_html.py</code></p>
+      </section>
+
+      <section id="limits">
+        <h2>8. Limitations</h2>
+        <ul>
+          <li><strong>Export gaps</strong> — deleted messages or other channels not visible</li>
+          <li><strong>Ambiguous tone</strong> — banter requires context; borderline rows intentional</li>
+          <li><strong>Date inference</strong> — message date used when play date not explicit</li>
+          <li><strong>Solo play</strong> — counts as skip for absent party, not joint success</li>
+          <li><strong>Manual classification</strong> — not fully automated; rules above guide judgment</li>
+          <li><strong>Private chat</strong> — verbatim quotes; share summaries responsibly</li>
+        </ul>
+      </section>
+    </article>
+  </div>
+
+  <footer>
+    golf-chat-review · August 2026 · <a href="index.html" style="color:var(--accent)">View data</a>
+  </footer>
+</body>
+</html>
