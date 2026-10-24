@@ -13,6 +13,7 @@ private val Context.dataStore by preferencesDataStore("golf_skip_store")
 class AnalysisStore(private val context: Context) {
     private val gson = Gson()
     private val key = stringPreferencesKey("snapshot_json")
+    private val simonIdKey = stringPreferencesKey("simon_android_id")
 
     fun loadSeed(): Snapshot {
         val json = context.assets.open("seed-data.json").bufferedReader().use { it.readText() }
@@ -25,5 +26,11 @@ class AnalysisStore(private val context: Context) {
 
     suspend fun save(snapshot: Snapshot) {
         context.dataStore.edit { it[key] = gson.toJson(snapshot) }
+    }
+
+    val simonAndroidIdFlow: Flow<String?> = context.dataStore.data.map { it[simonIdKey] }
+
+    suspend fun saveSimonAndroidId(androidId: String) {
+        context.dataStore.edit { it[simonIdKey] = androidId }
     }
 }

@@ -12,8 +12,8 @@ android {
         applicationId = "com.simon.golfchatreview"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 7
+        versionName = "1.0.6"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -51,5 +51,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.4")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

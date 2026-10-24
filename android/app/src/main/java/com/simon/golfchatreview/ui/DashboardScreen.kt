@@ -30,7 +30,7 @@ import com.simon.golfchatreview.ui.theme.Warn
 import com.simon.golfchatreview.ui.theme.whoColor
 
 @Composable
-fun DashboardScreen(snap: Snapshot) {
+fun DashboardScreen(snap: Snapshot, viewingAs: String? = null) {
     val s = snap.stats
     val ns = snap.analytics.noticeSummary
     val pct = if (ns.knownCount > 0) (ns.sameDay * 100 / ns.knownCount) else 0
@@ -40,6 +40,9 @@ fun DashboardScreen(snap: Snapshot) {
     ) {
         item {
             Text("Golf skips", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            if (viewingAs != null) {
+                Text("This phone: $viewingAs", color = whoColor(viewingAs), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
             Text(
                 snap.meta?.let { "Updated ${it.fileName} · ${it.messageCount} msgs · ${it.dateRange}" }
                     ?: "Bundled snapshot (import an export to refresh)",

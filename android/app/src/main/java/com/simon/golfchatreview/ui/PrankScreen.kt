@@ -1,7 +1,5 @@
 package com.simon.golfchatreview.ui
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +14,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,8 +23,7 @@ import com.simon.golfchatreview.ui.theme.Muted
 import com.simon.golfchatreview.ui.theme.Warn
 
 @Composable
-fun PrankScreen(onBack: () -> Unit) {
-    val ctx = LocalContext.current
+fun PrankScreen(onBack: () -> Unit, onPlayInApp: () -> Unit) {
     Column(
         Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -58,10 +54,7 @@ fun PrankScreen(onBack: () -> Unit) {
             )
         }
         Button(
-            onClick = {
-                val uri = Uri.parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-                ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            },
+            onClick = onPlayInApp,
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(56.dp),
         ) {
             Text("Play verification video")

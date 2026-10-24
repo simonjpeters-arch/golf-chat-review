@@ -6,7 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.simon.golfchatreview.data.AnalysisEngine
 import com.simon.golfchatreview.data.AnalysisStore
+import com.simon.golfchatreview.data.DeviceIdentity
 import com.simon.golfchatreview.data.ImportMeta
+import com.simon.golfchatreview.data.PhoneIdentity
 import com.simon.golfchatreview.data.Snapshot
 import com.simon.golfchatreview.data.WhatsAppParser
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +26,7 @@ data class UiState(
     val status: String = "",
     val error: String? = null,
     val pendingShareImport: Boolean = false,
+    val phone: PhoneIdentity? = null,
 )
 
 class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
@@ -35,15 +38,38 @@ class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val saved = store.snapshotFlow.first()
-            val snap = saved ?: AnalysisEngine.build(seed, emptyList(), null)
+            val registered = store.simonAndroidIdFlow.first()
+            val phone = DeviceIdentity.read(getApplication(), registered)
+            val snap = AnalysisEngine.presentForViewer(
+                saved ?: AnalysisEngine.build(seed, emptyList(), null),
+                phone.owner,
+            )
             _state.value = UiState(
                 snapshot = snap,
                 loading = false,
+                phone = phone,
                 status = if (saved?.meta != null) {
                     "Last import: ${saved.meta.fileName}"
                 } else {
                     "Bundled snapshot — import an export to refresh"
                 },
+            )
+        }
+    }
+
+    fun registerThisAsSimonPhone() {
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            val id = DeviceIdentity.read(app, null).androidId
+            store.saveSimonAndroidId(id)
+            val phone = DeviceIdentity.read(app, id)
+            val base = _state.value.snapshot?.let {
+                it.copy(confirmed = it.confirmed.filter { row -> row.source != "prank" })
+            }
+            _state.value = _state.value.copy(
+                phone = phone,
+                snapshot = base?.let { AnalysisEngine.presentForViewer(it, phone.owner) },
+                status = "Registered this Pixel as Simon's phone. Other installs count as Gaythan.",
             )
         }
     }
@@ -85,12 +111,14 @@ class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
                     AnalysisEngine.build(seed, messages, meta)
                 }
                 store.save(built)
+                val phone = DeviceIdentity.read(app, store.simonAndroidIdFlow.first())
                 _state.value = UiState(
-                    snapshot = built,
+                    snapshot = AnalysisEngine.presentForViewer(built, phone.owner),
                     loading = false,
                     importing = false,
                     pendingShareImport = false,
-                    status = "Updated from $name: ${count} messages, ${golf} golf mentions, ${built.stats.confirmedTotal} confirmed.",
+                    phone = phone,
+                    status = "Kept existing history and added from $name: ${count} messages, ${golf} golf mentions, ${built.stats.confirmedTotal} confirmed (${built.autoNew} new auto).",
                 )
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(

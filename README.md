@@ -20,7 +20,7 @@ Repo: https://github.com/simonjpeters-arch/golf-chat-review
 | **Audit** | Scrollable evidence list (date, who, quote, notice hours). Chips: All / Simon / Gaythan / Both / Short notice |
 | **Over time** | Quarterly stacked bars, cumulative Simon vs Gaythan, notice buckets |
 | **Update** | Storage Access Framework file picker for `.txt` / `.zip`. Parses on-device, persists in DataStore |
-| **Verify evidence** | From Audit (after the real list): joke stamp + opens YouTube Rickroll. Does not lock the phone |
+| **Verify evidence** | From Audit (after the real list): joke stamp. Play stays in the app (embedded YouTube player). Does not lock the phone |
 
 The app ships a **bundled snapshot** of the current 42 confirmed rows so it is useful before any import.
 
@@ -44,8 +44,8 @@ Android: chat → ⋮ → More → **Export chat** → **Without media** → Imp
 
 | Who | What |
 |---|---|
-| **Nathan** | Install the APK. Read Dashboard + Audit. Optional Verify button is a prank. |
-| **Simon** | Same APK. Use **Update** to import a new export. |
+| **Gaythan** | Install the APK. Phone auto-detects as Gaythan unless it looks like Simon’s Pixel. Joke overlay + in-app clip after ~45s. |
+| **Simon** | Same APK. Pixel / “simon” profile → Simon. Use **Update** to import a new export. |
 
 `share.html` / GitHub Pages remain as a leftover web snapshot — **the Android app is the product**.
 

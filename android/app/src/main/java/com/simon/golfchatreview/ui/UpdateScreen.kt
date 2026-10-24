@@ -38,6 +38,21 @@ fun UpdateScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Update from a text file", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        val phone = state.phone
+        if (phone != null) {
+            CardBlock(phone.banner) {
+                Text(phone.summary, fontWeight = FontWeight.SemiBold)
+                Text("Detected from: ${phone.howDetected}", color = Muted)
+                if (phone.userName.isNotBlank()) Text("User: ${phone.userName}", color = Muted, fontSize = 12.sp)
+                if (phone.googleHint.isNotBlank()) Text("Google: ${phone.googleHint}", color = Muted, fontSize = 12.sp)
+                if (phone.deviceName.isNotBlank()) Text("Device name: ${phone.deviceName}", color = Muted, fontSize = 12.sp)
+                Text("Android ID: ${phone.androidId}", color = Muted, fontSize = 12.sp)
+                Text(
+                    "No tap needed. Google Pixel or a profile/account with “simon” → Simon. Anything else → Gaythan.",
+                    color = Muted,
+                )
+            }
+        }
         CardBlock("Use a chat .txt already on this phone") {
             Text(
                 "WhatsApp cannot push chats into this app automatically. Put the export in Files (or Downloads), then pick it here. The dashboard, audit trail, and charts rebuild from that file.",

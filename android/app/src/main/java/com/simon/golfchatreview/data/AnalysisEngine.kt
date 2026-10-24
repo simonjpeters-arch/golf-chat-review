@@ -60,6 +60,77 @@ object AnalysisEngine {
         )
     }
 
+    /** Real history only on Simon's phone. Gaythan's phone also gets joke skip rows. */
+    fun presentForViewer(snap: Snapshot, owner: String?): Snapshot {
+        val real = snap.copy(confirmed = snap.confirmed.filter { it.source != "prank" })
+        val extra = if (owner == "Gaythan") gaythanPrankRows() else emptyList()
+        val confirmed = real.confirmed + extra
+        return real.copy(
+            confirmed = confirmed,
+            stats = Stats(
+                confirmedTotal = confirmed.size,
+                simon = confirmed.count { it.whoSkipped == "Simon" },
+                gaythan = confirmed.count { it.whoSkipped == "Gaythan" },
+                both = confirmed.count { it.whoSkipped == "Both" },
+                borderline = real.borderline.size,
+                weekdayConfirmed = real.weekday.count { it.type == "confirmed" },
+                weekdayFizzled = real.weekday.count { it.type == "fizzled" },
+            ),
+            analytics = buildAnalytics(confirmed, emptyList()),
+        )
+    }
+
+    private fun gaythanPrankRows(): List<ConfirmedRow> = listOf(
+        ConfirmedRow(
+            date = "10/24/26",
+            whoSkipped = "Gaythan",
+            planned = "Saturday golf",
+            reason = "\"sorry not coming, currently having my bum waxed\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+        ConfirmedRow(
+            date = "10/18/26",
+            whoSkipped = "Gaythan",
+            planned = "Sunday 9-hole",
+            reason = "\"can't make golf, in for a bleach, back's a bit shiny\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+        ConfirmedRow(
+            date = "9/6/26",
+            whoSkipped = "Gaythan",
+            planned = "Trent Park",
+            reason = "\"bailing, hot wax overran and I can't sit on a buggy\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+        ConfirmedRow(
+            date = "8/2/26",
+            whoSkipped = "Gaythan",
+            planned = "Pitch after work",
+            reason = "\"not turning up, aesthetician said no vigorous swinging for 48 hours\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+        ConfirmedRow(
+            date = "7/19/26",
+            whoSkipped = "Gaythan",
+            planned = "Morning tee",
+            reason = "\"sorry mate, combination wax + bleach + I look like a glazed ham\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+        ConfirmedRow(
+            date = "6/11/26",
+            whoSkipped = "Gaythan",
+            planned = "Weekend round",
+            reason = "\"I can't golf I'm face down on a table having my cheeks done\"",
+            outcome = "Fake WhatsApp line (Gaythan-phone overlay)",
+            source = "prank",
+        ),
+    )
+
     fun auditItems(snap: Snapshot): List<AuditItem> {
         val byDate = snap.analytics.notice.associateBy { it.date }
         return snap.confirmed.map { r ->

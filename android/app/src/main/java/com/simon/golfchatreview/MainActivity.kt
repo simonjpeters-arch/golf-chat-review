@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -37,6 +38,7 @@ import com.simon.golfchatreview.ui.AuditScreen
 import com.simon.golfchatreview.ui.DashboardScreen
 import com.simon.golfchatreview.ui.OverTimeScreen
 import com.simon.golfchatreview.ui.PrankScreen
+import com.simon.golfchatreview.ui.TrumpRickrollScreen
 import com.simon.golfchatreview.ui.UpdateScreen
 import com.simon.golfchatreview.ui.theme.Bg
 import com.simon.golfchatreview.ui.theme.GolfTheme
@@ -64,12 +66,18 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                LaunchedEffect(state.phone?.owner) {
+                    if (state.phone?.owner == "Gaythan") {
+                        delay(45_000)
+                        nav.navigate("trump") { launchSingleTop = true }
+                    }
+                }
                 val snap = state.snapshot
                 val route = nav.currentBackStackEntryAsState().value?.destination?.route
                 Scaffold(
                     containerColor = Bg,
                     bottomBar = {
-                        if (route != "prank") {
+                        if (route != "prank" && route != "trump") {
                             NavigationBar {
                                 data class Tab(val r: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
                                 listOf(
@@ -100,7 +108,7 @@ class MainActivity : ComponentActivity() {
                             CircularProgressIndicator(Modifier.align(Alignment.Center))
                         } else {
                             NavHost(nav, startDestination = "dash") {
-                                composable("dash") { DashboardScreen(snap) }
+                                composable("dash") { DashboardScreen(snap, state.phone?.owner) }
                                 composable("audit") { AuditScreen(snap) { nav.navigate("prank") } }
                                 composable("time") { OverTimeScreen(snap) }
                                 composable("update") {
@@ -114,7 +122,13 @@ class MainActivity : ComponentActivity() {
                                         },
                                     )
                                 }
-                                composable("prank") { PrankScreen { nav.popBackStack() } }
+                                composable("prank") {
+                                    PrankScreen(
+                                        onBack = { nav.popBackStack() },
+                                        onPlayInApp = { nav.navigate("trump") },
+                                    )
+                                }
+                                composable("trump") { TrumpRickrollScreen { nav.popBackStack() } }
                             }
                         }
                     }
