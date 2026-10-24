@@ -8,8 +8,9 @@ WhatsApp **does not** let a third-party app pull a personal 1:1 chat. There is n
 
 This is a **website you pin as an app icon**, not an App Store / Play Store binary. GitHub cannot install a native app from a clone.
 
-1. Open the **GitHub Pages** HTTPS link (Safari on iPhone, Chrome on Android).  
-   Repo: see GitHub; Pages URL is `https://<github-user>.github.io/golf-chat-review/`
+1. Open the **GitHub Pages** HTTPS link (Safari on iPhone, Chrome on Android):  
+   **https://simonjpeters-arch.github.io/golf-chat-review/**  
+   Repo: **https://github.com/simonjpeters-arch/golf-chat-review**
 2. **iPhone:** Share → **Add to Home Screen** → Add.  
 3. **Android:** Chrome menu → **Install app** or **Add to Home Screen**.
 4. Open **Audit trail**. Scroll the real ledger (dates, quotes, notice hours). Counts must match the Confirmed tab.
