@@ -24,7 +24,11 @@ import com.simon.golfchatreview.ui.theme.Gaythan
 import com.simon.golfchatreview.ui.theme.Muted
 
 @Composable
-fun UpdateScreen(state: UiState, onPickFile: () -> Unit) {
+fun UpdateScreen(
+    state: UiState,
+    onPickTxt: () -> Unit,
+    onPickAny: () -> Unit,
+) {
     val meta = state.snapshot?.meta
     Column(
         Modifier
@@ -33,20 +37,27 @@ fun UpdateScreen(state: UiState, onPickFile: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Update analysis", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        CardBlock("WhatsApp cannot auto-download chats") {
+        Text("Update from a text file", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        CardBlock("Use a chat .txt already on this phone") {
             Text(
-                "There is no official API for a third-party app to pull a personal 1:1 chat. Export the chat Without media, then import the .txt or .zip here.",
+                "WhatsApp cannot push chats into this app automatically. Put the export in Files (or Downloads), then pick it here. The dashboard, audit trail, and charts rebuild from that file.",
                 color = Muted,
             )
         }
         Button(
-            onClick = onPickFile,
+            onClick = onPickTxt,
             enabled = !state.importing,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Accent),
         ) {
-            Text("Import WhatsApp export", fontWeight = FontWeight.Bold)
+            Text("Choose .txt from phone", fontWeight = FontWeight.Bold)
+        }
+        Button(
+            onClick = onPickAny,
+            enabled = !state.importing,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) {
+            Text("Browse any file (.txt or .zip)")
         }
         if (state.importing) CircularProgressIndicator()
         Text(state.status, color = Muted)
@@ -62,11 +73,11 @@ fun UpdateScreen(state: UiState, onPickFile: () -> Unit) {
                 Text("SHA-256: ${meta.sha256.take(24)}…", color = Muted, fontSize = 12.sp)
             }
         }
-        CardBlock("Android export steps") {
-            Text("1. Open the Gaythan chat in WhatsApp", color = Muted)
-            Text("2. ⋮ → More → Export chat", color = Muted)
-            Text("3. Without media", color = Muted)
-            Text("4. Save to Files / Drive, then Import above", color = Muted)
+        CardBlock("How to get the file onto the phone") {
+            Text("1. WhatsApp → Gaythan chat → ⋮ → More → Export chat", color = Muted)
+            Text("2. Without media (saves a .txt, sometimes inside a .zip)", color = Muted)
+            Text("3. Save to Files / Downloads", color = Muted)
+            Text("4. Tap Choose .txt from phone, or open the file and Share → Golf Skips", color = Muted)
         }
         Spacer(Modifier.height(24.dp))
     }

@@ -23,6 +23,7 @@ data class UiState(
     val importing: Boolean = false,
     val status: String = "",
     val error: String? = null,
+    val pendingShareImport: Boolean = false,
 )
 
 class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
@@ -49,9 +50,18 @@ class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
 
     fun importUri(uri: Uri) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(importing = true, error = null, status = "Reading export…")
+            _state.value = _state.value.copy(
+                importing = true,
+                error = null,
+                status = "Reading chat file…",
+                pendingShareImport = true,
+            )
             try {
-                val cr = getApplication<Application>().contentResolver
+                val app = getApplication<Application>()
+                val cr = app.contentResolver
+                runCatching {
+                    cr.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
                 val name = cr.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
                     ?.use { c ->
                         val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
@@ -79,11 +89,13 @@ class GolfSkipViewModel(app: Application) : AndroidViewModel(app) {
                     snapshot = built,
                     loading = false,
                     importing = false,
-                    status = "Updated: ${count} messages, ${golf} golf mentions, ${built.stats.confirmedTotal} confirmed.",
+                    pendingShareImport = false,
+                    status = "Updated from $name: ${count} messages, ${golf} golf mentions, ${built.stats.confirmedTotal} confirmed.",
                 )
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(
                     importing = false,
+                    pendingShareImport = false,
                     error = t.message ?: t.toString(),
                     status = "Import failed",
                 )

@@ -1,5 +1,7 @@
 package com.simon.golfchatreview
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,6 +24,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIncomingFile(intent)
         enableEdgeToEdge()
         setContent {
             GolfTheme {
@@ -50,6 +54,15 @@ class MainActivity : ComponentActivity() {
                 val nav = rememberNavController()
                 val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                     if (uri != null) vm.importUri(uri)
+                }
+                LaunchedEffect(state.pendingShareImport) {
+                    if (state.pendingShareImport) {
+                        nav.navigate("update") {
+                            popUpTo("dash") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 }
                 val snap = state.snapshot
                 val route = nav.currentBackStackEntryAsState().value?.destination?.route
@@ -91,9 +104,15 @@ class MainActivity : ComponentActivity() {
                                 composable("audit") { AuditScreen(snap) { nav.navigate("prank") } }
                                 composable("time") { OverTimeScreen(snap) }
                                 composable("update") {
-                                    UpdateScreen(state) {
-                                        picker.launch(arrayOf("text/plain", "application/zip", "*/*"))
-                                    }
+                                    UpdateScreen(
+                                        state = state,
+                                        onPickTxt = {
+                                            picker.launch(arrayOf("text/plain", "text/*"))
+                                        },
+                                        onPickAny = {
+                                            picker.launch(arrayOf("*/*"))
+                                        },
+                                    )
                                 }
                                 composable("prank") { PrankScreen { nav.popBackStack() } }
                             }
@@ -102,5 +121,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingFile(intent)
+    }
+
+    private fun handleIncomingFile(intent: Intent?) {
+        if (intent == null) return
+        val uri: Uri? = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            }
+            else -> null
+        }
+        if (uri != null) vm.importUri(uri)
     }
 }

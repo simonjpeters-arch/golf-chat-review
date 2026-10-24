@@ -34,7 +34,7 @@ object WhatsAppParser {
         val text = if (fileName.endsWith(".zip", true) || looksLikeZip(bytes)) {
             unzipTxt(bytes)
         } else {
-            String(bytes, Charset.forName("UTF-8"))
+            decodeText(bytes)
         }
         return text to parseText(text)
     }
@@ -69,8 +69,22 @@ object WhatsAppParser {
                     }
                 }.thenBy { it.second.size },
             )
-            return String(pick.second, Charsets.UTF_8)
+            return decodeText(pick.second)
         }
+    }
+
+    private fun decodeText(bytes: ByteArray): String {
+        val utf8 = String(bytes, Charsets.UTF_8)
+        if (parseText(utf8).isNotEmpty() || !looksLikeUtf16(bytes)) return utf8
+        val utf16 = String(bytes, Charset.forName("UTF-16"))
+        return if (parseText(utf16).isNotEmpty()) utf16 else utf8
+    }
+
+    private fun looksLikeUtf16(bytes: ByteArray): Boolean {
+        if (bytes.size < 2) return false
+        val b0 = bytes[0].toInt() and 0xff
+        val b1 = bytes[1].toInt() and 0xff
+        return (b0 == 0xff && b1 == 0xfe) || (b0 == 0xfe && b1 == 0xff)
     }
 
     fun parseText(text: String): List<ChatMessage> {
